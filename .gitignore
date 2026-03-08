@@ -1,0 +1,18 @@
+# Go binaries
+hive
+bin/
+
+# Test binaries
+*.test
+*.prof
+
+# Data and Logs
+.hive_data/
+swarm_logs/
+*.log
+.agent/
+openspec/
+AGENT.md
+
+# OS Specific
+.DS_Store
