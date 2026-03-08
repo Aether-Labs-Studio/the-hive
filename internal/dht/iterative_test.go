@@ -78,7 +78,7 @@ func TestIterativeFindValue(t *testing.T) {
 	idC := NewNodeID("node-c")
 	rtC := NewRoutingTable(idC)
 	stC := NewInMemoryStorage()
-	stC.Store(key, value)
+	stC.Store(key, value, StateCommitted)
 	trC := NewTransport(idC, nil)
 	roC := NewRouter(trC, rtC, stC)
 	trC.SetHandler(roC)

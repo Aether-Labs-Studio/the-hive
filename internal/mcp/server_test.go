@@ -25,7 +25,7 @@ func (m *mockDHT) FindValue(key dht.NodeID) ([]byte, bool) {
 	return d, ok
 }
 
-func (m *mockDHT) StoreValue(key dht.NodeID, data []byte) error {
+func (m *mockDHT) StoreValue(key dht.NodeID, data []byte, state dht.ChunkState) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.data == nil { m.data = make(map[dht.NodeID][]byte) }
@@ -52,7 +52,10 @@ func (m *mockDHT) Search(q string) ([]dht.SearchResult, error) {
 	return []dht.SearchResult{{Content: "Search Result for " + q, AuthorID: "test-node", Reputation: 10}}, nil
 }
 
-func (m *mockDHT) Share(t, c, p string) (string, error) { return "Shared", nil }
+func (m *mockDHT) Share(t, c, p string, s dht.ChunkState) (string, error) { 
+	if s != "" { return "Processed (" + string(s) + ")", nil }
+	return "Shared", nil 
+}
 func (m *mockDHT) Rate(id string, s int) (string, error) { return "Rated", nil }
 
 type mockSanitizer struct {

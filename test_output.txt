@@ -1,0 +1,258 @@
+=== RUN   TestRouterHandlePing
+--- PASS: TestRouterHandlePing (0.00s)
+{"type":"PeerJoined","node_id":"41ffe5457d1a557c3317f2e5216ceaa355223d39","details":"127.0.0.1:9999","timestamp":"2026-03-08T13:48:50.457234Z"}
+=== RUN   TestRouterHandleFindNode
+{"type":"PeerJoined","node_id":"41ffe5457d1a557c3317f2e5216ceaa355223d39","details":"127.0.0.1:9999","timestamp":"2026-03-08T13:48:50.457496Z"}
+--- PASS: TestRouterHandleFindNode (0.00s)
+=== RUN   TestRouterHandleStore
+{"type":"PeerJoined","node_id":"41ffe5457d1a557c3317f2e5216ceaa355223d39","details":"127.0.0.1:9999","timestamp":"2026-03-08T13:48:50.457581Z"}
+--- PASS: TestRouterHandleStore (0.00s)
+=== RUN   TestProtocolVersioning
+[WARN] Router: Mensaje rechazado de 127.0.0.1:9999. Versión incompatible: v9.9.9 (Local: v1.1.0)
+--- PASS: TestProtocolVersioning (0.00s)
+=== RUN   TestRouterHandleFindValue
+{"type":"PeerJoined","node_id":"41ffe5457d1a557c3317f2e5216ceaa355223d39","details":"127.0.0.1:9999","timestamp":"2026-03-08T13:48:50.457643Z"}
+--- PASS: TestRouterHandleFindValue (0.00s)
+{"type":"PeerJoined","node_id":"41ffe5457d1a557c3317f2e5216ceaa355223d39","details":"127.0.0.1:9999","timestamp":"2026-03-08T13:48:50.457767Z"}
+=== RUN   TestDiscovery
+[INFO] Discovery: Iniciando autodescubrimiento en 239.0.0.1:7445
+[INFO] Discovery: Iniciando autodescubrimiento en 239.0.0.1:7445
+{"type":"PeerJoined","node_id":"893a227aaca1e12a5fa1c0201c0e38b8f3b1536b","details":"192.168.8.116:59744","timestamp":"2026-03-08T13:48:50.458499Z"}
+{"type":"PeerJoined","node_id":"0702c1cc60ff9e1331c47331a36ddd5d994ea38a","details":"192.168.8.116:58090","timestamp":"2026-03-08T13:48:50.458558Z"}
+--- PASS: TestDiscovery (0.10s)
+=== RUN   TestEngineBootstrap
+[INFO] Bootstrap: Iniciando unión a la red mediante el nodo semilla: 127.0.0.1:56922
+[INFO] Received PING RPC from 893a227aaca1e12a5fa1c0201c0e38b8f3b1536b (tx: bootstrap-ping)
+{"type":"PeerJoined","node_id":"893a227aaca1e12a5fa1c0201c0e38b8f3b1536b","details":"127.0.0.1:54162","timestamp":"2026-03-08T13:48:50.559757Z"}
+[INFO] Received PING RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: bootstrap-ping)
+[INFO] Bootstrap: Conectado con nodo semilla ID: 0702c1cc60ff9e1331c47331a36ddd5d994ea38a
+{"type":"PeerJoined","node_id":"0702c1cc60ff9e1331c47331a36ddd5d994ea38a","details":"127.0.0.1:56922","timestamp":"2026-03-08T13:48:50.559828Z"}
+[INFO] Received FIND_NODE RPC from 893a227aaca1e12a5fa1c0201c0e38b8f3b1536b (tx: lookup-893a227a-0702c1cc)
+[INFO] Received FIND_NODE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: lookup-893a227a-0702c1cc)
+[INFO] Received FIND_NODE RPC from 893a227aaca1e12a5fa1c0201c0e38b8f3b1536b (tx: lookup-893a227a-1ab9f16e)
+[INFO] Received FIND_NODE RPC from 893a227aaca1e12a5fa1c0201c0e38b8f3b1536b (tx: lookup-893a227a-893a227a)
+{"type":"PeerJoined","node_id":"893a227aaca1e12a5fa1c0201c0e38b8f3b1536b","details":"127.0.0.1:54162","timestamp":"2026-03-08T13:48:50.560064Z"}
+[INFO] Received FIND_NODE RPC from 1ab9f16eafea8cce18a8abf188e9376c94c4c0cd (tx: lookup-893a227a-1ab9f16e)
+[INFO] Received FIND_NODE RPC from 893a227aaca1e12a5fa1c0201c0e38b8f3b1536b (tx: lookup-893a227a-893a227a)
+[INFO] Bootstrap: Unión completada. Se descubrieron 3 nuevos contactos.
+--- PASS: TestEngineBootstrap (0.00s)
+=== RUN   TestKnowledgeVersioning
+--- PASS: TestKnowledgeVersioning (0.00s)
+=== RUN   TestIterativeLookup
+[INFO] Received FIND_NODE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: lookup-13a52578-893a227a)
+{"type":"PeerJoined","node_id":"0702c1cc60ff9e1331c47331a36ddd5d994ea38a","details":"127.0.0.1:64002","timestamp":"2026-03-08T13:48:50.560557Z"}
+[INFO] Received FIND_NODE RPC from 893a227aaca1e12a5fa1c0201c0e38b8f3b1536b (tx: lookup-13a52578-893a227a)
+[INFO] Received FIND_NODE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: lookup-13a52578-0702c1cc)
+[INFO] Received FIND_NODE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: lookup-13a52578-0702c1cc)
+[INFO] Received FIND_NODE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: lookup-13a52578-1ab9f16e)
+{"type":"PeerJoined","node_id":"0702c1cc60ff9e1331c47331a36ddd5d994ea38a","details":"127.0.0.1:64002","timestamp":"2026-03-08T13:48:50.560744Z"}
+[INFO] Received FIND_NODE RPC from 1ab9f16eafea8cce18a8abf188e9376c94c4c0cd (tx: lookup-13a52578-1ab9f16e)
+[INFO] Received FIND_NODE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: lookup-13a52578-13a52578)
+{"type":"PeerJoined","node_id":"0702c1cc60ff9e1331c47331a36ddd5d994ea38a","details":"127.0.0.1:64002","timestamp":"2026-03-08T13:48:50.560874Z"}
+[INFO] Received FIND_NODE RPC from 13a52578de340bb946011c7255926eaec4c5c4d6 (tx: lookup-13a52578-13a52578)
+--- PASS: TestIterativeLookup (0.00s)
+=== RUN   TestIterativeFindValue
+[INFO] Received FIND_VALUE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: findval-dff6d4ff-893a227a)
+{"type":"PeerJoined","node_id":"0702c1cc60ff9e1331c47331a36ddd5d994ea38a","details":"127.0.0.1:62191","timestamp":"2026-03-08T13:48:50.561584Z"}
+[INFO] Received FIND_VALUE RPC from 893a227aaca1e12a5fa1c0201c0e38b8f3b1536b (tx: findval-dff6d4ff-893a227a)
+[INFO] Received FIND_VALUE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: findval-dff6d4ff-1ab9f16e)
+[INFO] Received FIND_VALUE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: findval-dff6d4ff-0702c1cc)
+{"type":"PeerJoined","node_id":"0702c1cc60ff9e1331c47331a36ddd5d994ea38a","details":"127.0.0.1:62191","timestamp":"2026-03-08T13:48:50.5617Z"}
+[INFO] Received FIND_VALUE RPC from 1ab9f16eafea8cce18a8abf188e9376c94c4c0cd (tx: findval-dff6d4ff-1ab9f16e)
+[INFO] Received FIND_VALUE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: findval-dff6d4ff-0702c1cc)
+--- PASS: TestIterativeFindValue (0.00s)
+=== RUN   TestIndexMerging
+{"type":"PeerJoined","node_id":"b0da90d40948b40a6d1f5707076d910c5014e249","details":":0","timestamp":"2026-03-08T13:48:50.561884Z"}
+[INFO] Router: Fusionado índice para 771e417b9dcae54aead2f3cbbbff340787bc462f (1 -> 2 punteros)
+[ERROR] Failed to store data: immutable error
+{"type":"PeerJoined","node_id":"d2d03fbf575598778808087b4043b6336ed16ec9","details":":0","timestamp":"2026-03-08T13:48:50.561897Z"}
+    merging_test.go:86: Expected 2 pointers, got 1: [A]
+    merging_test.go:95: Merged index is missing pointers: [A]
+--- FAIL: TestIndexMerging (0.00s)
+=== RUN   TestNewNodeID
+--- PASS: TestNewNodeID (0.00s)
+=== RUN   TestXORMetric
+--- PASS: TestXORMetric (0.00s)
+=== RUN   TestNodeIDLess
+--- PASS: TestNodeIDLess (0.00s)
+=== RUN   TestReputationStore
+--- PASS: TestReputationStore (0.00s)
+=== RUN   TestAddContactCapacity
+--- PASS: TestAddContactCapacity (0.00s)
+=== RUN   TestRoutingTableConcurrency
+--- PASS: TestRoutingTableConcurrency (0.04s)
+=== RUN   TestFindClosestContacts
+--- PASS: TestFindClosestContacts (0.00s)
+=== RUN   TestMessageSerialization
+--- PASS: TestMessageSerialization (0.00s)
+=== RUN   TestNetworkListenAndStop
+    rpc_test.go:45: Listening on 127.0.0.1:53090
+[INFO] Received PING RPC from d2a04d71301a8915217dd5faf81d12cffd6cd958 (tx: test-tx)
+--- PASS: TestNetworkListenAndStop (0.05s)
+=== RUN   TestShortlist
+--- PASS: TestShortlist (0.00s)
+=== RUN   TestShortlistOrdering
+--- PASS: TestShortlistOrdering (0.00s)
+=== RUN   TestStorageGC
+--- PASS: TestStorageGC (0.00s)
+=== RUN   TestStorageEviction
+--- PASS: TestStorageEviction (0.00s)
+=== RUN   TestInMemoryStorage
+--- PASS: TestInMemoryStorage (0.00s)
+=== RUN   TestDiskStorage
+--- PASS: TestDiskStorage (0.00s)
+=== RUN   TestDiskStorageConcurrency
+--- PASS: TestDiskStorageConcurrency (0.23s)
+=== RUN   TestPubSubBroker
+[INFO] Received FIND_NODE RPC from 87c07649bad7bfcfaa628dd821e28d5db0fb05fd (tx: lookup-2c56319a-be6920b6)
+[INFO] Received FIND_NODE RPC from be6920b686ce76352b9ceb6941ec5b49a2caba68 (tx: lookup-2c56319a-be6920b6)
+[INFO] Received FIND_NODE RPC from 87c07649bad7bfcfaa628dd821e28d5db0fb05fd (tx: lookup-2c56319a-87c07649)
+[INFO] Received FIND_NODE RPC from 87c07649bad7bfcfaa628dd821e28d5db0fb05fd (tx: lookup-2c56319a-0c64d3ad)
+[INFO] Received FIND_NODE RPC from 87c07649bad7bfcfaa628dd821e28d5db0fb05fd (tx: lookup-2c56319a-87c07649)
+{"type":"PeerJoined","node_id":"87c07649bad7bfcfaa628dd821e28d5db0fb05fd","details":"127.0.0.1:56674","timestamp":"2026-03-08T13:48:50.882479Z"}
+[INFO] Received FIND_NODE RPC from 0c64d3adec87fe08ab42cbed98e753b5c259a01b (tx: lookup-2c56319a-0c64d3ad)
+[INFO] Received SUBSCRIBE RPC from 87c07649bad7bfcfaa628dd821e28d5db0fb05fd (tx: sub-2c56319a)
+[INFO] Received SUBSCRIBE RPC from 0c64d3adec87fe08ab42cbed98e753b5c259a01b (tx: sub-2c56319a)
+[INFO] Received SUBSCRIBE RPC from 87c07649bad7bfcfaa628dd821e28d5db0fb05fd (tx: sub-2c56319a)
+[INFO] Received SUBSCRIBE RPC from be6920b686ce76352b9ceb6941ec5b49a2caba68 (tx: sub-2c56319a)
+[INFO] Received SUBSCRIBE RPC from 87c07649bad7bfcfaa628dd821e28d5db0fb05fd (tx: sub-2c56319a)
+[INFO] Received SUBSCRIBE RPC from 87c07649bad7bfcfaa628dd821e28d5db0fb05fd (tx: sub-2c56319a)
+[INFO] Engine: Sharing topic: test-kw (Parent: , State: committed)
+--- PASS: TestPubSubBroker (0.10s)
+{"type":"RPCError","node_id":"be6920b686ce76352b9ceb6941ec5b49a2caba68","details":"FindValue failed to 127.0.0.1:53167: write udp 127.0.0.1:52299-\u003e127.0.0.1:53167: use of closed network connection","timestamp":"2026-03-08T13:48:50.983226Z"}
+{"type":"RPCError","node_id":"87c07649bad7bfcfaa628dd821e28d5db0fb05fd","details":"FindValue failed to 127.0.0.1:56674: write udp 127.0.0.1:52299-\u003e127.0.0.1:56674: use of closed network connection","timestamp":"2026-03-08T13:48:50.983228Z"}
+=== RUN   TestIndexMergingConcurrency
+{"type":"KeywordSeen","details":"message","timestamp":"2026-03-08T13:48:50.983233Z"}
+{"type":"RPCError","node_id":"87c07649bad7bfcfaa628dd821e28d5db0fb05fd","details":"Lookup failed to 127.0.0.1:56674: write udp 127.0.0.1:52299-\u003e127.0.0.1:56674: use of closed network connection","timestamp":"2026-03-08T13:48:50.983253Z"}
+{"type":"RPCError","node_id":"be6920b686ce76352b9ceb6941ec5b49a2caba68","details":"Lookup failed to 127.0.0.1:53167: write udp 127.0.0.1:52299-\u003e127.0.0.1:53167: use of closed network connection","timestamp":"2026-03-08T13:48:50.983259Z"}
+{"type":"RPCError","node_id":"87c07649bad7bfcfaa628dd821e28d5db0fb05fd","details":"FindValue failed to 127.0.0.1:56674: write udp 127.0.0.1:52299-\u003e127.0.0.1:56674: use of closed network connection","timestamp":"2026-03-08T13:48:50.983283Z"}
+{"type":"RPCError","node_id":"be6920b686ce76352b9ceb6941ec5b49a2caba68","details":"FindValue failed to 127.0.0.1:53167: write udp 127.0.0.1:52299-\u003e127.0.0.1:53167: use of closed network connection","timestamp":"2026-03-08T13:48:50.983283Z"}
+{"type":"KeywordSeen","details":"test","timestamp":"2026-03-08T13:48:50.98329Z"}
+{"type":"RPCError","node_id":"87c07649bad7bfcfaa628dd821e28d5db0fb05fd","details":"Lookup failed to 127.0.0.1:56674: write udp 127.0.0.1:52299-\u003e127.0.0.1:56674: use of closed network connection","timestamp":"2026-03-08T13:48:50.983311Z"}
+{"type":"RPCError","node_id":"87c07649bad7bfcfaa628dd821e28d5db0fb05fd","details":"FindValue failed to 127.0.0.1:56674: write udp 127.0.0.1:52299-\u003e127.0.0.1:56674: use of closed network connection","timestamp":"2026-03-08T13:48:50.983318Z"}
+[INFO] Router: Fusionado índice para 53e20abf9480955dd31475b57095ce58b2c79216 (1 -> 2 punteros)
+[ERROR] Failed to store data: immutable error
+[INFO] Router: Fusionado índice para 53e20abf9480955dd31475b57095ce58b2c79216 (1 -> 2 punteros)
+[ERROR] Failed to store data: immutable error
+[INFO] Router: Fusionado índice para 53e20abf9480955dd31475b57095ce58b2c79216 (1 -> 2 punteros)
+{"type":"RPCError","node_id":"be6920b686ce76352b9ceb6941ec5b49a2caba68","details":"FindValue failed to 127.0.0.1:53167: write udp 127.0.0.1:52299-\u003e127.0.0.1:53167: use of closed network connection","timestamp":"2026-03-08T13:48:50.983323Z"}
+[ERROR] Failed to store data: immutable error
+[INFO] Router: Fusionado índice para 53e20abf9480955dd31475b57095ce58b2c79216 (1 -> 2 punteros)
+[ERROR] Failed to store data: immutable error
+{"type":"KeywordSeen","details":"pubsub","timestamp":"2026-03-08T13:48:50.983325Z"}
+[INFO] Router: Fusionado índice para 53e20abf9480955dd31475b57095ce58b2c79216 (1 -> 2 punteros)
+{"type":"RPCError","node_id":"be6920b686ce76352b9ceb6941ec5b49a2caba68","details":"Lookup failed to 127.0.0.1:53167: write udp 127.0.0.1:52299-\u003e127.0.0.1:53167: use of closed network connection","timestamp":"2026-03-08T13:48:50.983335Z"}
+{"type":"RPCError","node_id":"be6920b686ce76352b9ceb6941ec5b49a2caba68","details":"Lookup failed to 127.0.0.1:53167: write udp 127.0.0.1:52299-\u003e127.0.0.1:53167: use of closed network connection","timestamp":"2026-03-08T13:48:50.983331Z"}
+{"type":"RPCError","node_id":"87c07649bad7bfcfaa628dd821e28d5db0fb05fd","details":"Lookup failed to 127.0.0.1:56674: write udp 127.0.0.1:52299-\u003e127.0.0.1:56674: use of closed network connection","timestamp":"2026-03-08T13:48:50.983349Z"}
+[ERROR] Failed to store data: immutable error
+[INFO] Router: Fusionado índice para 53e20abf9480955dd31475b57095ce58b2c79216 (1 -> 2 punteros)
+[ERROR] Failed to store data: immutable error
+[INFO] Router: Fusionado índice para 53e20abf9480955dd31475b57095ce58b2c79216 (1 -> 2 punteros)
+[ERROR] Failed to store data: immutable error
+[INFO] Router: Fusionado índice para 53e20abf9480955dd31475b57095ce58b2c79216 (1 -> 2 punteros)
+[ERROR] Failed to store data: immutable error
+[INFO] Router: Fusionado índice para 53e20abf9480955dd31475b57095ce58b2c79216 (1 -> 2 punteros)
+[ERROR] Failed to store data: immutable error
+    subscriptions_test.go:159: Expected 10 pointers, got 1. Index: {Kind:hive_index_v1 Pointers:[chunk-9]}
+--- FAIL: TestIndexMergingConcurrency (0.00s)
+=== RUN   TestTelemetryEmit
+--- PASS: TestTelemetryEmit (0.01s)
+=== RUN   TestWorkersLifecycle
+[INFO] Workers: Iniciando trabajadores de mantenimiento (Refresco: 10ms, Replicación: 10ms, Topología: 10ms, GC: 10ms)
+[DEBUG] Workers: Iniciando refresco periódico de k-buckets.
+[INFO] Workers: Iniciando ciclo de replicación de datos.
+{"type":"TopologySync","node_id":"303d460628bd57b03b5166613ed96541328260b0","details":"Periodic topology snapshot","payload":{"neighbors":[],"hot_keywords":[],"stats":{"local_keys":0,"memory_bytes":2158216}},"timestamp":"2026-03-08T13:48:51.005399Z"}
+{"type":"BucketRefresh","details":"Periodic refresh of all 160 k-buckets completed","timestamp":"2026-03-08T13:48:51.005512Z"}
+{"type":"TopologySync","node_id":"303d460628bd57b03b5166613ed96541328260b0","details":"Periodic topology snapshot","payload":{"neighbors":[],"hot_keywords":[],"stats":{"local_keys":0,"memory_bytes":2171080}},"timestamp":"2026-03-08T13:48:51.015545Z"}
+[INFO] Workers: Iniciando ciclo de replicación de datos.
+[DEBUG] Workers: Iniciando refresco periódico de k-buckets.
+{"type":"BucketRefresh","details":"Periodic refresh of all 160 k-buckets completed","timestamp":"2026-03-08T13:48:51.015777Z"}
+[INFO] Workers: Iniciando ciclo de replicación de datos.
+[DEBUG] Workers: Iniciando refresco periódico de k-buckets.
+{"type":"TopologySync","node_id":"303d460628bd57b03b5166613ed96541328260b0","details":"Periodic topology snapshot","payload":{"neighbors":[],"hot_keywords":[],"stats":{"local_keys":0,"memory_bytes":2180456}},"timestamp":"2026-03-08T13:48:51.02544Z"}
+{"type":"BucketRefresh","details":"Periodic refresh of all 160 k-buckets completed","timestamp":"2026-03-08T13:48:51.025548Z"}
+[INFO] Workers: Iniciando ciclo de replicación de datos.
+[DEBUG] Workers: Iniciando refresco periódico de k-buckets.
+{"type":"TopologySync","node_id":"303d460628bd57b03b5166613ed96541328260b0","details":"Periodic topology snapshot","payload":{"neighbors":[],"hot_keywords":[],"stats":{"local_keys":0,"memory_bytes":2186648}},"timestamp":"2026-03-08T13:48:51.03564Z"}
+{"type":"BucketRefresh","details":"Periodic refresh of all 160 k-buckets completed","timestamp":"2026-03-08T13:48:51.03578Z"}
+[INFO] Workers: Deteniendo trabajador de redistribución (handoff).
+[INFO] Workers: Deteniendo trabajador de refresco.
+[INFO] Workers: Deteniendo trabajador de limpieza (GC).
+[INFO] Workers: Deteniendo trabajador de replicación.
+[INFO] Workers: Deteniendo trabajador de topología.
+{"type":"TopologySync","node_id":"303d460628bd57b03b5166613ed96541328260b0","details":"Periodic topology snapshot","payload":{"neighbors":[],"hot_keywords":[],"stats":{"local_keys":0,"memory_bytes":2194200}},"timestamp":"2026-03-08T13:48:51.045613Z"}
+--- PASS: TestWorkersLifecycle (0.07s)
+=== RUN   TestReplicationWorker
+[INFO] Received STORE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: store-7115e989)
+[INFO] Received STORE RPC from 893a227aaca1e12a5fa1c0201c0e38b8f3b1536b (tx: store-7115e989)
+{"type":"DataReplicated","node_id":"893a227aaca1e12a5fa1c0201c0e38b8f3b1536b","details":"Replicated key 7115e9890f5b5cc6914bdfa3b7c011db1cdafedb","timestamp":"2026-03-08T13:48:51.066325Z"}
+--- PASS: TestReplicationWorker (0.10s)
+=== RUN   TestHandoffWorker
+[INFO] Workers: Iniciando trabajadores de mantenimiento (Refresco: 1h0m0s, Replicación: 1h0m0s, Topología: 1h0m0s, GC: 1h0m0s)
+{"type":"PeerJoined","node_id":"893a227aaca1e12a5fa1c0201c0e38b8f3b1536b","details":"127.0.0.1:52616","timestamp":"2026-03-08T13:48:51.166861Z"}
+[INFO] Received PING RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: test-ping)
+[INFO] Received STORE RPC from 0702c1cc60ff9e1331c47331a36ddd5d994ea38a (tx: store-e0e34ca8)
+{"type":"PeerJoined","node_id":"0702c1cc60ff9e1331c47331a36ddd5d994ea38a","details":"127.0.0.1:61640","timestamp":"2026-03-08T13:48:51.167098Z"}
+[INFO] Received STORE RPC from 893a227aaca1e12a5fa1c0201c0e38b8f3b1536b (tx: store-e0e34ca8)
+{"type":"DataReplicated","node_id":"893a227aaca1e12a5fa1c0201c0e38b8f3b1536b","details":"Handoff key e0e34ca85833997c0ccab5fe92d5aafc73b2f273","timestamp":"2026-03-08T13:48:51.167319Z"}
+[INFO] Workers: Deteniendo trabajador de redistribución (handoff).
+[INFO] Workers: Deteniendo trabajador de limpieza (GC).
+[INFO] Workers: Deteniendo trabajador de topología.
+[INFO] Workers: Deteniendo trabajador de replicación.
+--- PASS: TestHandoffWorker (0.02s)
+=== RUN   TestHandoffTriggerLimit
+[INFO] Workers: Deteniendo trabajador de refresco.
+{"type":"PeerJoined","node_id":"b36828398e513ae808e0c63582fb5dba635d7d15","details":"127.0.0.1:1001","timestamp":"2026-03-08T13:48:51.188045Z"}
+{"type":"PeerJoined","node_id":"fa5e1a4df381d0b650f5f55e8d7155719602e5a2","details":"127.0.0.1:1000","timestamp":"2026-03-08T13:48:51.188027Z"}
+{"type":"PeerJoined","node_id":"1cfa6fa82f344cef1269a3d746bdd56d640b209c","details":"127.0.0.1:1004","timestamp":"2026-03-08T13:48:51.188053Z"}
+{"type":"PeerJoined","node_id":"c0932e562c38612464924c94f9114cfa3359fcaa","details":"127.0.0.1:1002","timestamp":"2026-03-08T13:48:51.188047Z"}
+{"type":"PeerJoined","node_id":"126c842b9c1548b0525dc8ec9fea17f7813c2cb4","details":"127.0.0.1:1006","timestamp":"2026-03-08T13:48:51.188059Z"}
+{"type":"PeerJoined","node_id":"4595501b6dd9270f9319fcc5d80f066baa7ad885","details":"127.0.0.1:1005","timestamp":"2026-03-08T13:48:51.188056Z"}
+{"type":"PeerJoined","node_id":"78ea7516ed45ff89f9147494f6b3dcce138407e9","details":"127.0.0.1:1007","timestamp":"2026-03-08T13:48:51.188061Z"}
+{"type":"PeerJoined","node_id":"0a21410ac1c7e6c30dcf1ce7f66d479586fa7509","details":"127.0.0.1:1008","timestamp":"2026-03-08T13:48:51.188065Z"}
+{"type":"PeerJoined","node_id":"e54e071691394b677d6a7e061aca3a8579f05b2c","details":"127.0.0.1:1009","timestamp":"2026-03-08T13:48:51.18807Z"}
+{"type":"PeerJoined","node_id":"1745e1e0ee1ee9beefb44c5f75074a71c57e83a8","details":"127.0.0.1:1010","timestamp":"2026-03-08T13:48:51.188072Z"}
+{"type":"PeerJoined","node_id":"87dedec92e0cec702f31c8483f7c4b1282817cfb","details":"127.0.0.1:1003","timestamp":"2026-03-08T13:48:51.188049Z"}
+{"type":"PeerJoined","node_id":"b15483ec1090c84743e27cad456a037881c79f42","details":"127.0.0.1:1018","timestamp":"2026-03-08T13:48:51.188087Z"}
+{"type":"PeerJoined","node_id":"f7537e70edc525fa87b452f40276137dfe76d5f5","details":"127.0.0.1:1011","timestamp":"2026-03-08T13:48:51.188074Z"}
+{"type":"PeerJoined","node_id":"7af1edf9cfa3eba5929c2eae87eb9f2fb9a008bb","details":"127.0.0.1:1012","timestamp":"2026-03-08T13:48:51.188076Z"}
+{"type":"PeerJoined","node_id":"839c72a968674ac66d6d01f79f3df7770af12018","details":"127.0.0.1:1013","timestamp":"2026-03-08T13:48:51.188078Z"}
+{"type":"PeerJoined","node_id":"1e7c19eb61fd4a808272ffc07090e266b2f74183","details":"127.0.0.1:1016","timestamp":"2026-03-08T13:48:51.188082Z"}
+{"type":"PeerJoined","node_id":"32cadd56839df59fec050101063cad8a939fe27e","details":"127.0.0.1:1026","timestamp":"2026-03-08T13:48:51.188104Z"}
+{"type":"PeerJoined","node_id":"78e8d1e2591845f2a6408611ea53304c4c7da9db","details":"127.0.0.1:1017","timestamp":"2026-03-08T13:48:51.188086Z"}
+{"type":"PeerJoined","node_id":"6a3f114cf83ccd3e0f2e5f2dfe0c8a242b3d1a7c","details":"127.0.0.1:1014","timestamp":"2026-03-08T13:48:51.188079Z"}
+{"type":"PeerJoined","node_id":"b3465b25d0f9acfdc87a8f0ada5bbb1aff632a82","details":"127.0.0.1:1020","timestamp":"2026-03-08T13:48:51.18809Z"}
+{"type":"PeerJoined","node_id":"f10c7e4a831d9c0083371cc1077a74f4086acc89","details":"127.0.0.1:1019","timestamp":"2026-03-08T13:48:51.188089Z"}
+{"type":"PeerJoined","node_id":"1d955294db643d89c0a1e9e8fadef342ba76f5b3","details":"127.0.0.1:1021","timestamp":"2026-03-08T13:48:51.188092Z"}
+{"type":"PeerJoined","node_id":"fbcf6a6aed126269447c88cea854d64fbdcb4094","details":"127.0.0.1:1023","timestamp":"2026-03-08T13:48:51.188095Z"}
+{"type":"PeerJoined","node_id":"8f406f7405c21047514df6e63fe040f0b1c6482a","details":"127.0.0.1:1022","timestamp":"2026-03-08T13:48:51.188094Z"}
+{"type":"PeerJoined","node_id":"201086bb853b31a6d88bb80c3d8c939f442c2503","details":"127.0.0.1:1029","timestamp":"2026-03-08T13:48:51.18811Z"}
+{"type":"PeerJoined","node_id":"e072e346ab8a97d7a94976b6a1bd6ceb02f3c844","details":"127.0.0.1:1028","timestamp":"2026-03-08T13:48:51.188108Z"}
+{"type":"PeerJoined","node_id":"c4dea2e9ded127dad1b004e2829676de4605a821","details":"127.0.0.1:1027","timestamp":"2026-03-08T13:48:51.188105Z"}
+{"type":"PeerJoined","node_id":"6523a8f4c16079f9f6bc279e10fd0904aa517a2e","details":"127.0.0.1:1045","timestamp":"2026-03-08T13:48:51.18814Z"}
+{"type":"PeerJoined","node_id":"0a25c913c689efa0f8f7e57808321ea83c6a78b6","details":"127.0.0.1:1042","timestamp":"2026-03-08T13:48:51.188135Z"}
+{"type":"PeerJoined","node_id":"6f6c86b4eb65a4ca5e48f0ff2d8d8487f6989bb6","details":"127.0.0.1:1061","timestamp":"2026-03-08T13:48:51.188159Z"}
+{"type":"PeerJoined","node_id":"040694013cba8f7568e36484e9be985068dc449f","details":"127.0.0.1:1025","timestamp":"2026-03-08T13:48:51.188101Z"}
+{"type":"PeerJoined","node_id":"9e0559b3a2ba3a06fb7c110c4bd2867d40434687","details":"127.0.0.1:1030","timestamp":"2026-03-08T13:48:51.188111Z"}
+--- PASS: TestHandoffTriggerLimit (0.00s)
+{"type":"PeerJoined","node_id":"da3966798ede84637a9aef29cb5248e012f0189e","details":"127.0.0.1:1031","timestamp":"2026-03-08T13:48:51.188113Z"}
+FAIL
+{"type":"PeerJoined","node_id":"3f808085f1d59cb7e7704d6215a8e66893926bd8","details":"127.0.0.1:1067","timestamp":"2026-03-08T13:48:51.188173Z"}
+{"type":"PeerJoined","node_id":"008650774df63b6389aedd634ad584becb94f427","details":"127.0.0.1:1033","timestamp":"2026-03-08T13:48:51.188121Z"}
+{"type":"PeerJoined","node_id":"3c3c48834e69e26cda0f20cfd992f8113a64e823","details":"127.0.0.1:1043","timestamp":"2026-03-08T13:48:51.188137Z"}
+{"type":"PeerJoined","node_id":"aea25351691dbf9543983392c9e6dbdc8e965a90","details":"127.0.0.1:1035","timestamp":"2026-03-08T13:48:51.188125Z"}
+{"type":"PeerJoined","node_id":"44c3cf0fe618f19a5049067025282bbc01f550d8","details":"127.0.0.1:1041","timestamp":"2026-03-08T13:48:51.188131Z"}
+{"type":"PeerJoined","node_id":"02479162505c1e808fa062d728c368bdff848255","details":"127.0.0.1:1046","timestamp":"2026-03-08T13:48:51.188142Z"}
+{"type":"PeerJoined","node_id":"b8dc1d934b496e9962b150ed579165449241e6db","details":"127.0.0.1:1015","timestamp":"2026-03-08T13:48:51.188081Z"}
+{"type":"PeerJoined","node_id":"21ba79c61b67a256b01d6fa6d238f50f49d4b77e","details":"127.0.0.1:1051","timestamp":"2026-03-08T13:48:51.188148Z"}
+{"type":"PeerJoined","node_id":"7ca746984b1d6e58eeed99935e766a55c55f53b4","details":"127.0.0.1:1049","timestamp":"2026-03-08T13:48:51.188146Z"}
+{"type":"PeerJoined","node_id":"1f0486ac2a8edd569ebcaa874af0738a1eaae8c8","details":"127.0.0.1:1053","timestamp":"2026-03-08T13:48:51.188151Z"}
+{"type":"PeerJoined","node_id":"2f81a6688b45bf71fd578184395313dbdce98d06","details":"127.0.0.1:1057","timestamp":"2026-03-08T13:48:51.188155Z"}
+{"type":"PeerJoined","node_id":"ab132c30e712cd966c1bfa811e30a78e88ce5760","details":"127.0.0.1:1024","timestamp":"2026-03-08T13:48:51.188097Z"}
+{"type":"PeerJoined","node_id":"6e69323fd4bcd9e80203e33a7680c409feceff1b","details":"127.0.0.1:1032","timestamp":"2026-03-08T13:48:51.188115Z"}
+{"type":"PeerJoined","node_id":"053b50c92a451f1ce255a4adac16dd285f2ee673","details":"127.0.0.1:1063","timestamp":"2026-03-08T13:48:51.188162Z"}
+{"type":"PeerJoined","node_id":"43e6620586246a390a02cd087d9a14fc40be03d0","details":"127.0.0.1:1066","timestamp":"2026-03-08T13:48:51.188167Z"}
+{"type":"PeerJoined","node_id":"0780e01417241657f1f16f27a8cec91b5989ce2f","details":"127.0.0.1:1064","timestamp":"2026-03-08T13:48:51.188164Z"}
+{"type":"PeerJoined","node_id":"ae4748fb4ca482a499b7615510cc48f8417dbe0e","details":"127.0.0.1:1034","timestamp":"2026-03-08T13:48:51.188123Z"}
+FAIL	the-hive/internal/dht	0.932s
+FAIL

@@ -209,9 +209,11 @@ func (r *Router) handleStore(addr net.Addr, msg Message) {
 
 	// Phase 16: Set Merging for Indices
 	finalData := payload.Data
+	stateToStore := StateCommitted
 	
 	// 1. Peek if incoming is an index
 	if newIdx, ok := r.isIndex(payload.Data); ok {
+		stateToStore = StateIndex
 		// 2. Check if we already have an index for this key
 		if existing, found := r.storage.Retrieve(payload.Key); found {
 			if oldIdx, ok := r.isIndex(existing); ok {
@@ -238,7 +240,7 @@ func (r *Router) handleStore(addr net.Addr, msg Message) {
 		}
 	}
 
-	if err := r.storage.Store(payload.Key, finalData); err != nil {
+	if err := r.storage.Store(payload.Key, finalData, stateToStore); err != nil {
 		logger.Error("Failed to store data: %v", err)
 		return
 	}
@@ -536,6 +538,6 @@ func (r *Router) StoreValueRemote(addr net.Addr, key NodeID, data []byte) error 
 }
 
 // StoreValue performs a local store operation in the storage.
-func (r *Router) StoreValue(key NodeID, data []byte) error {
-	return r.storage.Store(key, data)
+func (r *Router) StoreValue(key NodeID, data []byte, state ChunkState) error {
+	return r.storage.Store(key, data, state)
 }

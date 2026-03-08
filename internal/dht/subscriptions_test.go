@@ -85,7 +85,7 @@ func TestPubSubBroker(t *testing.T) {
 	content := "This is a pubsub message"
 	topic := "test-kw"
 	
-	_, err := engineC.Share(topic, content, "")
+	_, err := engineC.Share(topic, content, "", StateCommitted)
 	if err != nil {
 		t.Fatalf("Share failed: %v", err)
 	}

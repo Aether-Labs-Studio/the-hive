@@ -3,6 +3,7 @@ package mcp
 import (
 	"encoding/json"
 	"fmt"
+	"the-hive/internal/dht"
 	"the-hive/internal/logger"
 )
 
@@ -16,9 +17,10 @@ type HiveSearchParams struct {
 }
 
 type HiveShareParams struct {
-	Content  string `json:"content"`
-	Topic    string `json:"topic,omitempty"`
-	ParentID string `json:"parent_id,omitempty"` // Added for Phase 16 traceability
+	Content  string         `json:"content"`
+	Topic    string         `json:"topic,omitempty"`
+	ParentID string         `json:"parent_id,omitempty"` // Added for Phase 16 traceability
+	State    dht.ChunkState `json:"state,omitempty"`     // Added for Phase 1.1.0 GitOps support
 }
 
 type HiveRateParams struct {
@@ -59,6 +61,11 @@ func (s *Server) handleToolsList(req Request) {
 					"parent_id": map[string]any{
 						"type":        "string",
 						"description": "Optional ID of the previous version of this discovery.",
+					},
+					"state": map[string]any{
+						"type":        "string",
+						"description": "The state: modified, staged, committed. Only committed is broadcasted.",
+						"enum":        []string{"modified", "staged", "committed"},
 					},
 				},
 				"required": []string{"content"},
@@ -149,11 +156,11 @@ func (s *Server) handleHiveShare(req Request, rawArgs json.RawMessage) {
 		return
 	}
 
-	res, err := s.dht.Share(args.Topic, args.Content, args.ParentID)
+	res, err := s.dht.Share(args.Topic, args.Content, args.ParentID, args.State)
 	if err != nil {
 		logger.Error("MCP: Share failed: %v", err)
 		s.sendResponse(req.ID, map[string]any{
-			"content": []map[string]any{{"type": "text", "text": fmt.Sprintf("Error al compartir: %v", err)}},
+			"content": []map[string]any{{"type": "text", "text": fmt.Sprintf("Error al procesar: %v", err)}},
 			"isError": true,
 		})
 		return

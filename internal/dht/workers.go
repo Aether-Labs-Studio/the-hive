@@ -86,6 +86,11 @@ func (e *Engine) proactiveReplication(contact Contact) {
 	}
 
 	for _, key := range keys {
+		// Phase 1.1.0: Only replicate Committed chunks
+		if meta, ok := e.router.storage.GetMetadata(key); ok {
+			if meta.State != StateCommitted { continue }
+		}
+
 		// Calculate if the new node belongs in the k-closest set for this key.
 		closest := e.router.rt.FindClosestContacts(key, K)
 		
@@ -191,6 +196,11 @@ func (e *Engine) replicateData() {
 	}
 
 	for _, key := range keys {
+		// Phase 1.1.0: Only replicate Committed chunks
+		if meta, ok := e.router.storage.GetMetadata(key); ok {
+			if meta.State != StateCommitted { continue }
+		}
+
 		data, ok := e.router.storage.Retrieve(key)
 		if !ok {
 			continue

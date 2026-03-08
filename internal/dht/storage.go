@@ -16,19 +16,32 @@ import (
 
 // Storage defines the interface for storing and retrieving data in the DHT.
 type Storage interface {
-	Store(key NodeID, data []byte) error
+	Store(key NodeID, data []byte, state ChunkState) error
 	Retrieve(key NodeID) ([]byte, bool)
+	GetMetadata(key NodeID) (*StorageMetadata, bool)
 	GetAllKeys() []NodeID
 	CleanExpired() int
 }
 
+// ChunkState represents the GitOps-inspired lifecycle of a knowledge chunk.
+type ChunkState string
+
+const (
+	StateModified  ChunkState = "modified"  // Work-in-progress, local only, short TTL
+	StateStaged    ChunkState = "staged"    // Validated locally, ready to be committed
+	StateCommitted ChunkState = "committed" // Signed, immutable, searchable, and broadcastable
+	StateIndex     ChunkState = "index"     // Mutable, broadcastable, searchable (used for keyword indices)
+)
+
 // StorageMetadata tracks TTL and LRU info for a stored chunk.
 type StorageMetadata struct {
-	Key        NodeID `json:"key"`
-	Size       int64  `json:"size"`
-	ExpiresAt  int64  `json:"expires_at"`
-	AccessedAt int64  `json:"accessed_at"`
-	AuthorPub  []byte `json:"author_pub,omitempty"`
+	Key        NodeID     `json:"key"`
+	Size       int64      `json:"size"`
+	ExpiresAt  int64      `json:"expires_at"`
+	AccessedAt int64      `json:"accessed_at"`
+	AuthorPub  []byte     `json:"author_pub,omitempty"`
+	State      ChunkState `json:"state"`                // Added for Phase 1.1.0
+	ParentID   string     `json:"parent_id,omitempty"`   // Added for Phase 1.1.0 DAG support
 }
 
 // ReputationProvider allows storage to query author trust during eviction.
@@ -68,25 +81,44 @@ func NewDiskStorage(basePath string, maxStorage int64, rep ReputationProvider) (
 	return s, nil
 }
 
-// Store saves data and updates metadata, enforcing quotas.
-func (s *DiskStorage) Store(key NodeID, data []byte) error {
-	// Extract basic envelope info if possible to get expiration and author
+// Store saves data and updates metadata, enforcing quotas and immutability.
+func (s *DiskStorage) Store(key NodeID, data []byte, state ChunkState) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// 1. Enforce Immutability for Committed chunks
+	if old, exists := s.metadata[key]; exists {
+		if old.State == StateCommitted {
+			return fmt.Errorf("immutable error: cannot modify committed chunk %x", key)
+		}
+		s.currentSize -= old.Size
+	}
+
+	// 2. Extract basic envelope info if possible
+	if state == "" {
+		state = StateModified // Default
+	}
+	
 	expiresAt := time.Now().Add(24 * time.Hour).Unix()
+	if state == StateModified {
+		expiresAt = time.Now().Add(1 * time.Hour).Unix() // Modified chunks expire fast
+	}
+	
 	var authorPub []byte
+	var parentID string
 	
 	var envelope struct {
 		PublicKey []byte `json:"pub_key"`
 		ExpiresAt int64  `json:"expires_at"`
+		ParentID  string `json:"parent_id"`
 	}
 	if err := json.Unmarshal(data, &envelope); err == nil {
 		if envelope.ExpiresAt > 0 {
 			expiresAt = envelope.ExpiresAt
 		}
 		authorPub = envelope.PublicKey
+		parentID = envelope.ParentID
 	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	itemSize := int64(len(data))
 	
@@ -111,16 +143,14 @@ func (s *DiskStorage) Store(key NodeID, data []byte) error {
 	gzWriter.Close()
 
 	// Update metadata
-	if old, exists := s.metadata[key]; exists {
-		s.currentSize -= old.Size
-	}
-	
 	s.metadata[key] = &StorageMetadata{
 		Key:        key,
 		Size:       itemSize,
 		ExpiresAt:  expiresAt,
 		AccessedAt: time.Now().Unix(),
 		AuthorPub:  authorPub,
+		State:      state,
+		ParentID:   parentID,
 	}
 	s.currentSize += itemSize
 	_ = s.saveMetadata()
@@ -165,6 +195,13 @@ func (s *DiskStorage) Retrieve(key NodeID) ([]byte, bool) {
 	}
 
 	return data, true
+}
+
+func (s *DiskStorage) GetMetadata(key NodeID) (*StorageMetadata, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	meta, ok := s.metadata[key]
+	return meta, ok
 }
 
 func (s *DiskStorage) GetAllKeys() []NodeID {
@@ -286,17 +323,27 @@ func (s *DiskStorage) saveMetadata() error {
 // InMemoryStorage remains simple for testing
 type InMemoryStorage struct {
 	data map[NodeID][]byte
+	meta map[NodeID]*StorageMetadata
 	mu   sync.RWMutex
 }
 
 func NewInMemoryStorage() *InMemoryStorage {
-	return &InMemoryStorage{data: make(map[NodeID][]byte)}
+	return &InMemoryStorage{
+		data: make(map[NodeID][]byte),
+		meta: make(map[NodeID]*StorageMetadata),
+	}
 }
 
-func (s *InMemoryStorage) Store(key NodeID, data []byte) error {
+func (s *InMemoryStorage) Store(key NodeID, data []byte, state ChunkState) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	
+	if old, exists := s.meta[key]; exists && old.State == StateCommitted {
+		return fmt.Errorf("immutable error")
+	}
+
 	s.data[key] = data
+	s.meta[key] = &StorageMetadata{Key: key, State: state}
 	return nil
 }
 
@@ -305,6 +352,13 @@ func (s *InMemoryStorage) Retrieve(key NodeID) ([]byte, bool) {
 	defer s.mu.RUnlock()
 	d, ok := s.data[key]
 	return d, ok
+}
+
+func (s *InMemoryStorage) GetMetadata(key NodeID) (*StorageMetadata, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	m, ok := s.meta[key]
+	return m, ok
 }
 
 func (s *InMemoryStorage) GetAllKeys() []NodeID {

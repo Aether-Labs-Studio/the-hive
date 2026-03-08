@@ -69,7 +69,7 @@ func TestReplicationWorker(t *testing.T) {
 	// Add data to A
 	key := NewNodeID("test-data")
 	data := []byte("hello hive")
-	stA.Store(key, data)
+	stA.Store(key, data, StateCommitted)
 
 	engA := NewEngine(roA, nil)
 
@@ -117,7 +117,7 @@ func TestHandoffWorker(t *testing.T) {
 	// Add data to A
 	key := NewNodeID("data-to-handoff")
 	data := []byte("handoff content")
-	stA.Store(key, data)
+	stA.Store(key, data, StateCommitted)
 
 	engA := NewEngine(roA, nil)
 	ctx, cancel := context.WithCancel(context.Background())

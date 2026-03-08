@@ -201,7 +201,7 @@ func TestRouterHandleFindValue(t *testing.T) {
 	}
 
 	// 1. Test when value exists
-	storage.Store(key, data)
+	storage.Store(key, data, StateCommitted)
 	router.HandleMessage(remoteAddr, msg)
 
 	var resp FindValueResponse

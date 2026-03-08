@@ -15,7 +15,7 @@ import (
 // DHT defines the interface for the DHT operations needed by the MCP server.
 type DHT interface {
 	FindValue(dht.NodeID) ([]byte, bool)
-	StoreValue(dht.NodeID, []byte) error
+	StoreValue(dht.NodeID, []byte, dht.ChunkState) error
 	
 	// Reputation Support
 	GetReputation(pubKey []byte) int
@@ -23,7 +23,7 @@ type DHT interface {
 
 		// Knowledge Methods
 	Search(query string) ([]dht.SearchResult, error)
-	Share(topic, content, parentID string) (string, error)
+	Share(topic, content, parentID string, state dht.ChunkState) (string, error)
 	Rate(chunkID string, score int) (string, error)
 }
 
@@ -108,7 +108,7 @@ func (s *Server) handleRequest(req Request) {
 			"capabilities":    map[string]any{},
 			"serverInfo": map[string]string{
 				"name":    "the-hive",
-				"version": "0.1.0",
+				"version": "1.1.0",
 			},
 		})
 	case "tools/list":

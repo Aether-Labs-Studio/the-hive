@@ -208,16 +208,17 @@ func (t *Telemetry) handleAPISearch(w http.ResponseWriter, r *http.Request) {
 
 func (t *Telemetry) handleAPIShare(w http.ResponseWriter, r *http.Request) {
 	var req struct { 
-		Topic    string `json:"topic"` 
-		Content  string `json:"content"` 
-		ParentID string `json:"parent_id,omitempty"`
+		Topic    string     `json:"topic"` 
+		Content  string     `json:"content"` 
+		ParentID string     `json:"parent_id,omitempty"`
+		State    ChunkState `json:"state,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", 400); return
 	}
 	if t.engine == nil { http.Error(w, "Engine not ready", 503); return }
 	
-	res, err := t.engine.Share(req.Topic, req.Content, req.ParentID)
+	res, err := t.engine.Share(req.Topic, req.Content, req.ParentID, req.State)
 	if err != nil { http.Error(w, err.Error(), 500); return }
 	
 	w.Header().Set("Content-Type", "application/json")

@@ -107,8 +107,8 @@ func (e *Engine) FindValue(key NodeID) ([]byte, bool) {
 	return e.router.FindValue(key)
 }
 
-func (e *Engine) StoreValue(key NodeID, data []byte) error {
-	return e.router.StoreValue(key, data)
+func (e *Engine) StoreValue(key NodeID, data []byte, state ChunkState) error {
+	return e.router.StoreValue(key, data, state)
 }
 
 func (e *Engine) Subscribe(keyword string) {
@@ -164,6 +164,13 @@ func (e *Engine) performExactSearch(query string) ([]SearchResult, error) {
 	data, found := e.router.FindValue(targetID)
 	if !found {
 		return nil, nil
+	}
+
+	// Phase 1.1.0: Only allow Committed chunks in search results
+	if meta, ok := e.router.storage.GetMetadata(targetID); ok {
+		if meta.State != StateCommitted {
+			return nil, nil
+		}
 	}
 
 	// 1. Verify and extract (handles signatures and decompression)
@@ -252,8 +259,10 @@ func (e *Engine) performMultiTermSearch(terms []string) ([]SearchResult, error) 
 	return e.resolveIndex(NewNodeID(strings.Join(terms, " ")), dummyIdx)
 }
 
-func (e *Engine) Share(topic, content, parentID string) (string, error) {
-	logger.Info("Engine: Sharing topic: %s (Parent: %s)", topic, parentID)
+func (e *Engine) Share(topic, content, parentID string, state ChunkState) (string, error) {
+	logger.Info("Engine: Sharing topic: %s (Parent: %s, State: %s)", topic, parentID, state)
+
+	if state == "" { state = StateCommitted }
 
 	if e.sanitizer.IsTopicBlocked(topic) {
 		return "", fmt.Errorf("security policy: topic blocked")
@@ -263,20 +272,22 @@ func (e *Engine) Share(topic, content, parentID string) (string, error) {
 
 	var finalID NodeID
 	if len(sanitized) > ChunkThreshold {
-		id, err := e.shareLargeContent(sanitized, parentID)
+		id, err := e.shareLargeContent(sanitized, parentID) // Large content always committed for now
 		if err != nil { return "", err }
 		finalID = id
 	} else {
 		chunk, id, err := e.sanitizer.PackageChunk(sanitized, parentID)
 		if err != nil { return "", err }
-		_ = e.router.StoreValue(id, chunk)
+		_ = e.router.StoreValue(id, chunk, state)
 		finalID = id
 	}
 
-	// Indexing
-	go e.indexContent(topic, string(sanitized), finalID)
+	// Only index and notify if Committed
+	if state == StateCommitted {
+		go e.indexContent(topic, string(sanitized), finalID)
+	}
 
-	return fmt.Sprintf("Memoria compartida e indexada. ID: %x", finalID), nil
+	return fmt.Sprintf("Memoria procesada (%s). ID: %x", state, finalID), nil
 }
 
 func (e *Engine) Rate(chunkIDHex string, score int) (string, error) {
@@ -317,7 +328,7 @@ func (e *Engine) shareLargeContent(data []byte, parentID string) (NodeID, error)
 		// Segments are just data, we don't link them to parents individually
 		chunk, id, err := e.sanitizer.PackageChunk(seg, "")
 		if err != nil { return NodeID{}, err }
-		_ = e.router.StoreValue(id, chunk)
+		_ = e.router.StoreValue(id, chunk, StateCommitted)
 		chunkIDs[i] = hex.EncodeToString(id[:])
 	}
 
@@ -329,7 +340,7 @@ func (e *Engine) shareLargeContent(data []byte, parentID string) (NodeID, error)
 	manifestRaw, _ := json.Marshal(manifest)
 	manifestData, _ := e.sanitizer.Sign(manifestRaw, parentID)
 	manifestID := NewNodeID(string(manifestRaw))
-	_ = e.router.StoreValue(manifestID, manifestData)
+	_ = e.router.StoreValue(manifestID, manifestData, StateCommitted)
 
 	return manifestID, nil
 }
@@ -372,7 +383,7 @@ func (e *Engine) indexContent(topic, content string, chunkID NodeID) {
 			
 			rawJSON, _ := json.Marshal(index)
 			newData, _ := e.sanitizer.Sign(rawJSON, "")
-			_ = e.router.StoreValue(kwID, newData)
+			_ = e.router.StoreValue(kwID, newData, StateIndex)
 			GlobalTelemetry.Emit(EventType("KeywordSeen"), "", kw)
 			
 			// Active Publish: Notify k-closest nodes about the update
@@ -453,6 +464,11 @@ func (e *Engine) resolveIndex(indexID NodeID, idx *IndexChunk) ([]SearchResult, 
 			decoded, _ := hex.DecodeString(p)
 			var ptrID NodeID
 			copy(ptrID[:], decoded)
+
+			// Phase 1.1.0: Only allow Committed chunks
+			if meta, ok := e.router.storage.GetMetadata(ptrID); ok {
+				if meta.State != StateCommitted { return }
+			}
 
 			chunk, found := e.router.FindValue(ptrID)
 			if !found { return }

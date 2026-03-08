@@ -63,7 +63,7 @@ func TestStorageEviction(t *testing.T) {
 	key1 := NewNodeID("good-data")
 	data1 := make([]byte, 60)
 	// Add dummy file to disk so Store/Retrieve works
-	storage.Store(key1, data1) 
+	storage.Store(key1, data1, StateCommitted) 
 	// Override metadata to match our test case exactly
 	storage.mu.Lock()
 	storage.metadata[key1].AuthorPub = authorGood
@@ -74,7 +74,7 @@ func TestStorageEviction(t *testing.T) {
 	// 2. Store data from bad author (30 bytes)
 	key2 := NewNodeID("bad-data")
 	data2 := make([]byte, 30)
-	storage.Store(key2, data2)
+	storage.Store(key2, data2, StateCommitted)
 	storage.mu.Lock()
 	storage.metadata[key2].AuthorPub = authorBad
 	storage.metadata[key2].Size = 30
@@ -84,7 +84,7 @@ func TestStorageEviction(t *testing.T) {
 	// 3. Store new data (20 bytes) -> Total 110 > 100 -> Must evict
 	// The bad author should be evicted first.
 	newData := make([]byte, 20)
-	storage.Store(NewNodeID("new"), newData)
+	storage.Store(NewNodeID("new"), newData, StateCommitted)
 	
 	if _, found := storage.metadata[key2]; found {
 		t.Error("Bad author's data should have been evicted first")

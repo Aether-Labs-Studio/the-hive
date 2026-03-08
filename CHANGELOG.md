@@ -6,6 +6,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-03-08
+
+### 🔄 ChunkState Lifecycle — GitOps for the Swarm
+
+A GitOps-inspired 3-state lifecycle for knowledge chunks that brings discipline to how data flows through the network.
+
+### Added
+
+#### 📦 ChunkState Machine (`modified` → `staged` → `committed`)
+- **Modified**: Work-in-progress chunks with 1h TTL, local only, not indexed or replicated.
+- **Staged**: Validated locally, ready for review, standard 24h TTL.
+- **Committed**: Signed, immutable, searchable, and broadcastable across the swarm.
+
+#### 🔒 Storage Immutability
+- Committed chunks are now **immutable** — any attempt to overwrite returns an error.
+- Lock acquisition moved before immutability check to prevent race conditions.
+
+#### 🛡️ Scoped Replication & Search
+- Proactive and periodic replication workers **skip non-committed chunks**, preventing WIP data from propagating.
+- `Engine.Search()` filters out non-committed chunks from results.
+
+### Changed
+- `Engine.Share()` now accepts a `state` parameter (defaults to `committed`).
+- Only committed chunks trigger keyword indexing and Pub/Sub notifications.
+- MCP `hive_share` tool exposes `state` enum (`modified`, `staged`, `committed`).
+- REST `/api/share` accepts optional `state` field.
+- MCP server version bumped to `1.1.0`.
+- DHT protocol version bumped to `v1.1.0`.
+
+---
+
 ## [1.0.0] - 2026-03-07
 
 ### 🚀 Launch of the Decentralized Shared Consciousness

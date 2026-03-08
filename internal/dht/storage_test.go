@@ -15,7 +15,7 @@ func TestInMemoryStorage(t *testing.T) {
 	data := []byte("test-data")
 
 	// Test store and retrieve
-	err := storage.Store(key, data)
+	err := storage.Store(key, data, StateCommitted)
 	if err != nil {
 		t.Fatalf("Failed to store data: %v", err)
 	}
@@ -52,7 +52,7 @@ func TestDiskStorage(t *testing.T) {
 	data := []byte("persistent-data")
 
 	// 1. Test basic store and retrieve
-	if err := storage.Store(key, data); err != nil {
+	if err := storage.Store(key, data, StateCommitted); err != nil {
 		t.Fatalf("Failed to store data: %v", err)
 	}
 
@@ -113,7 +113,7 @@ func TestDiskStorageConcurrency(t *testing.T) {
 			for j := 0; j < numOperations; j++ {
 				key := NewNodeID(fmt.Sprintf("key-%d-%d", id, j))
 				data := []byte(fmt.Sprintf("data-%d-%d", id, j))
-				storage.Store(key, data)
+				storage.Store(key, data, StateCommitted)
 			}
 		}(i)
 	}

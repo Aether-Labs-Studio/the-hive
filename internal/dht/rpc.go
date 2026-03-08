@@ -22,7 +22,7 @@ const (
 )
 
 // ProtocolVersion is the current version of the DHT communication protocol.
-const ProtocolVersion = "v1.0.0"
+const ProtocolVersion = "v1.1.0"
 
 // Message is the standard RPC message for The Hive DHT.
 type Message struct {
