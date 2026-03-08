@@ -22,7 +22,7 @@ type DHT interface {
 	RateAuthor(pubKey []byte, delta int)
 
 		// Knowledge Methods
-	Search(query string) (string, error)
+	Search(query string) ([]dht.SearchResult, error)
 	Share(topic, content, parentID string) (string, error)
 	Rate(chunkID string, score int) (string, error)
 }

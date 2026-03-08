@@ -136,9 +136,17 @@ func (e *Engine) IsSubscribed(keyword string) bool { return e.subMgr.IsSubscribe
 func (e *Engine) GetAllSubscriptions() []string { return e.subMgr.GetAllSubscriptions() }
 func (e *Engine) GetSubscriptionManager() *SubscriptionManager { return e.subMgr }
 
+// SearchResult represents a single piece of knowledge found in the swarm.
+type SearchResult struct {
+	Content    string `json:"content"`
+	AuthorID   string `json:"author_id,omitempty"`
+	Reputation int    `json:"reputation"`
+	ParentID   string `json:"parent_id,omitempty"`
+}
+
 // --- Knowledge Logic (Search / Share / Rate) ---
 
-func (e *Engine) Search(query string) (string, error) {
+func (e *Engine) Search(query string) ([]SearchResult, error) {
 	queryTerms := ExtractKeywords(query)
 	if len(queryTerms) == 0 {
 		return e.performExactSearch(query)
@@ -149,13 +157,13 @@ func (e *Engine) Search(query string) (string, error) {
 	return e.performMultiTermSearch(queryTerms)
 }
 
-func (e *Engine) performExactSearch(query string) (string, error) {
+func (e *Engine) performExactSearch(query string) ([]SearchResult, error) {
 	targetID := NewNodeID(query)
 	logger.Info("Engine: Search started for '%s' (ID: %x)", query, targetID)
 
 	data, found := e.router.FindValue(targetID)
 	if !found {
-		return "No se encontró información para esta consulta.", nil
+		return nil, nil
 	}
 
 	// 1. Verify and extract (handles signatures and decompression)
@@ -164,7 +172,7 @@ func (e *Engine) performExactSearch(query string) (string, error) {
 		// Try again without hash verification if it's potentially an index/manifest
 		payload, pub, parentID, err = e.sanitizer.ExtractAndInspectSecure(data, NodeID{})
 		if err != nil {
-			return fmt.Sprintf("🚨 Error de seguridad: %v", err), nil
+			return nil, fmt.Errorf("🚨 Error de seguridad: %v", err)
 		}
 	}
 
@@ -172,7 +180,7 @@ func (e *Engine) performExactSearch(query string) (string, error) {
 	if pub != nil {
 		rep := e.GetReputation(pub)
 		if rep < MinReputation {
-			return "Contenido bloqueado: baja reputación del autor.", nil
+			return nil, fmt.Errorf("Contenido bloqueado: baja reputación del autor.")
 		}
 	}
 
@@ -188,7 +196,7 @@ func (e *Engine) performExactSearch(query string) (string, error) {
 	return e.formatDataResponse(targetID, payload, pub, parentID)
 }
 
-func (e *Engine) performMultiTermSearch(terms []string) (string, error) {
+func (e *Engine) performMultiTermSearch(terms []string) ([]SearchResult, error) {
 	logger.Info("Engine: Multi-term search (AND) for: %v", terms)
 
 	var wg sync.WaitGroup
@@ -219,7 +227,7 @@ func (e *Engine) performMultiTermSearch(terms []string) (string, error) {
 	wg.Wait()
 
 	if len(termResults) < len(terms) {
-		return "No se encontraron coincidencias que cumplan con todos los términos.", nil
+		return nil, fmt.Errorf("No se encontraron coincidencias que cumplan con todos los términos.")
 	}
 
 	// Intersection
@@ -237,7 +245,7 @@ func (e *Engine) performMultiTermSearch(terms []string) (string, error) {
 	}
 
 	if len(intersection) == 0 {
-		return "No se encontraron memorias que contengan todos los términos.", nil
+		return nil, fmt.Errorf("No se encontraron memorias que contengan todos los términos.")
 	}
 
 	dummyIdx := &IndexChunk{Kind: IndexKind, Pointers: intersection}
@@ -385,7 +393,7 @@ func (e *Engine) indexContent(topic, content string, chunkID NodeID) {
 	}
 }
 
-func (e *Engine) resolveManifest(manifestID NodeID, m *Manifest) (string, error) {
+func (e *Engine) resolveManifest(manifestID NodeID, m *Manifest) ([]SearchResult, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	segments := make([][]byte, len(m.Chunks))
@@ -418,28 +426,25 @@ func (e *Engine) resolveManifest(manifestID NodeID, m *Manifest) (string, error)
 	}
 	wg.Wait()
 
-	if filteredCount > 0 { return "Contenido bloqueado por baja reputación del autor.", nil }
-	if errorsFound { return "Error al recuperar segmentos del manifiesto.", nil }
+	if filteredCount > 0 { return nil, fmt.Errorf("Contenido bloqueado por baja reputación del autor.") }
+	if errorsFound { return nil, fmt.Errorf("Error al recuperar segmentos del manifiesto.") }
 
 	fullPayload := Join(segments)
 	uniqueAuthors := make(map[string]struct{})
 	for _, a := range authors { uniqueAuthors[a] = struct{}{} }
 	authorList := strings.Join(getMapKeys(uniqueAuthors), ", ")
 
-	parentInfo := ""
-	if m.ParentID != "" {
-		parentInfo = fmt.Sprintf("\n**Ancestría:** 📜 Evolución de `%s`", m.ParentID)
-	}
-
-	return fmt.Sprintf("### 🐝 Memoria Reensamblada\n**Estado:** ✅ Verificado\n**Autores:** 👤 %s%s\n\n---\n%s", 
-		authorList, parentInfo, string(fullPayload)), nil
+	return []SearchResult{{
+		Content:  string(fullPayload),
+		AuthorID: authorList,
+		ParentID: m.ParentID,
+	}}, nil
 }
 
-func (e *Engine) resolveIndex(indexID NodeID, idx *IndexChunk) (string, error) {
+func (e *Engine) resolveIndex(indexID NodeID, idx *IndexChunk) ([]SearchResult, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	var results []string
-	var authorsInfo []string
+	var results []SearchResult
 
 	for _, ptrHex := range idx.Pointers {
 		wg.Add(1)
@@ -452,34 +457,35 @@ func (e *Engine) resolveIndex(indexID NodeID, idx *IndexChunk) (string, error) {
 			chunk, found := e.router.FindValue(ptrID)
 			if !found { return }
 
-			payload, pub, _, err := e.sanitizer.ExtractAndInspectSecure(chunk, ptrID)
+			payload, pub, parentID, err := e.sanitizer.ExtractAndInspectSecure(chunk, ptrID)
 			if err != nil { return }
 
+			rep := 0
+			authorStr := "Desconocido"
 			if pub != nil {
-				rep := e.GetReputation(pub)
+				rep = e.GetReputation(pub)
 				if rep < MinReputation { return }
 				authorHash := NewNodeID(string(pub))
-				mu.Lock()
-				authorsInfo = append(authorsInfo, fmt.Sprintf("%x (%+d)", authorHash[:4], rep))
-				results = append(results, string(payload))
-				mu.Unlock()
-			} else {
-				mu.Lock(); results = append(results, string(payload)); mu.Unlock()
+				authorStr = fmt.Sprintf("%x", authorHash)[:8]
 			}
+
+			mu.Lock()
+			results = append(results, SearchResult{
+				Content:    string(payload),
+				AuthorID:   authorStr,
+				Reputation: rep,
+				ParentID:   parentID,
+			})
+			mu.Unlock()
 		}(ptrHex)
 	}
 	wg.Wait()
 
-	if len(results) == 0 { return "No hay resultados de autores confiables.", nil }
-
-	res := fmt.Sprintf("### 🐝 Resultados del Enjambre\n**Colaboradores:** 👤 %s\n\n", strings.Join(authorsInfo, ", "))
-	for i, r := range results {
-		res += fmt.Sprintf("#### Fragmento %d\n%s\n\n", i+1, r)
-	}
-	return res, nil
+	if len(results) == 0 { return nil, fmt.Errorf("No hay resultados de autores confiables.") }
+	return results, nil
 }
 
-func (e *Engine) formatDataResponse(targetID NodeID, payload []byte, pub ed25519.PublicKey, parentID string) (string, error) {
+func (e *Engine) formatDataResponse(targetID NodeID, payload []byte, pub ed25519.PublicKey, parentID string) ([]SearchResult, error) {
 	rep := 0
 	authorStr := "Desconocido"
 	if pub != nil {
@@ -488,13 +494,12 @@ func (e *Engine) formatDataResponse(targetID NodeID, payload []byte, pub ed25519
 		authorStr = fmt.Sprintf("%x", authorHash)[:8]
 	}
 
-	parentInfo := ""
-	if parentID != "" {
-		parentInfo = fmt.Sprintf("\n**Ancestría:** 📜 Evolución de `%s`", parentID)
-	}
-
-	return fmt.Sprintf("### 🐝 Memoria Recuperada\n**Autor:** 👤 %s | **Reputación:** %+d\n**Estado:** ✅ Firma Verificada%s\n\n---\n%s", 
-		authorStr, rep, parentInfo, string(payload)), nil
+	return []SearchResult{{
+		Content:    string(payload),
+		AuthorID:   authorStr,
+		Reputation: rep,
+		ParentID:   parentID,
+	}}, nil
 }
 
 // --- Infrastructure Management ---

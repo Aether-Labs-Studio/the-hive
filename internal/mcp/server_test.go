@@ -47,9 +47,9 @@ func (m *mockDHT) RateAuthor(pubKey []byte, delta int) {
 	m.reputation[hex.EncodeToString(pubKey)] += delta
 }
 
-func (m *mockDHT) Search(q string) (string, error) {
-	if q == "fail" { return "", fmt.Errorf("error") }
-	return "Search Result for " + q, nil
+func (m *mockDHT) Search(q string) ([]dht.SearchResult, error) {
+	if q == "fail" { return nil, fmt.Errorf("error") }
+	return []dht.SearchResult{{Content: "Search Result for " + q, AuthorID: "test-node", Reputation: 10}}, nil
 }
 
 func (m *mockDHT) Share(t, c, p string) (string, error) { return "Shared", nil }

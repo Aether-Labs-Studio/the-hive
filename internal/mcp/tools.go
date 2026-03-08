@@ -116,14 +116,29 @@ func (s *Server) handleHiveSearch(req Request, rawArgs json.RawMessage) {
 	}
 
 	// Delegar al Engine (que ahora implementa la lógica de búsqueda descentralizada)
-	res, err := s.dht.Search(args.Query)
+	results, err := s.dht.Search(args.Query)
 	if err != nil {
 		s.sendError(req.ID, -32603, "Search error", err.Error())
 		return
 	}
 
+	// Formatear resultados para la salida de texto de MCP
+	var output string
+	if len(results) == 0 {
+		output = "No se encontró información para esta consulta."
+	} else {
+		output = fmt.Sprintf("### 🐝 Resultados del Enjambre para: %s\n\n", args.Query)
+		for i, res := range results {
+			authorInfo := fmt.Sprintf("👤 %s | Reputación: %+d", res.AuthorID, res.Reputation)
+			if res.ParentID != "" {
+				authorInfo += fmt.Sprintf(" | 📜 Evolución de `%s`", res.ParentID)
+			}
+			output += fmt.Sprintf("#### Fragmento %d\n**Autor:** %s\n\n---\n%s\n\n", i+1, authorInfo, res.Content)
+		}
+	}
+
 	s.sendResponse(req.ID, map[string]any{
-		"content": []map[string]any{{"type": "text", "text": res}},
+		"content": []map[string]any{{"type": "text", "text": output}},
 	})
 }
 
