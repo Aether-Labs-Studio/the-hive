@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Aether-Labs-Studio/the-hive/main/resources/icon.svg" width="128" height="128" alt="The Hive Logo">
+  <img src="assets/logo.png" width="200" height="200" alt="The Hive Logo">
 </p>
 
 <p align="center">
