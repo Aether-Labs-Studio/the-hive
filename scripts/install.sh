@@ -79,8 +79,36 @@ install_binary() {
 
 # ── Setup ~/.hive_data ───────────────────────────────────────────────────────
 setup_data_dir() {
+  local config_path="$HIVE_DIR/config.json"
+
   mkdir -p "$HIVE_DIR"
   success "Data directory created → $HIVE_DIR"
+
+  if [ -f "$config_path" ]; then
+    info "Existing config.json detected; skipping default config generation."
+    return
+  fi
+
+  cat > "$config_path" <<'EOF'
+{
+  "node": {
+    "addr": "127.0.0.1:0",
+    "bootstrap": ""
+  },
+  "discovery": {
+    "enabled": true,
+    "port": 7441
+  },
+  "monitor": {
+    "port": 7439
+  },
+  "storage": {
+    "max_bytes": 1073741824
+  }
+}
+EOF
+  chmod 600 "$config_path"
+  success "Default config created → $config_path"
 }
 
 # ── MCP client auto-configuration ────────────────────────────────────────────
