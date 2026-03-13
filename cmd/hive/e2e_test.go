@@ -35,9 +35,10 @@ func TestEndToEnd(t *testing.T) {
 
 	// Build the binary
 	binaryPath := filepath.Join(tempDir, "hive")
-	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", binaryPath, "./main.go")
-	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("Failed to build hive binary: %v", err)
+	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", binaryPath, ".")
+	buildOutput, err := buildCmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Failed to build hive binary: %v\n%s", err, strings.TrimSpace(string(buildOutput)))
 	}
 
 	// 2. Start Node A (Seed)
