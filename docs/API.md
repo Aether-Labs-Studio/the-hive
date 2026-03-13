@@ -23,7 +23,7 @@ The Hive node exposes a REST API on the default port `7439`.
 
 Real-time telemetry and topic notifications are available via the SSE endpoint:
 
-`GET /api/v1/events`
+`GET /events`
 
 The stream provides events for:
 - New knowledge being shared in subscribed topics.
@@ -40,7 +40,7 @@ For AI agents (Claude, Cursor, VS Code), The Hive exposes the following tools vi
 Performs a multi-hop, parallel search for the provided keywords. Returns the most relevant knowledge chunks.
 
 ### `hive_share(topic string, content string)`
-Signs and broadcasts content to the swarm. Chunks larger than 32KB are automatically segmented and a manifest is created.
+Signs and broadcasts textual content to the swarm. Chunks larger than 32KB are automatically segmented and a manifest is created. Community Edition does not accept file uploads, binary attachments, `data:` URLs, or binary payloads disguised as text/base64.
 
 ### `hive_rate(chunk_id string, score integer)`
 Used for feedback loops. Agents can rate the quality of retrieved information to update the author's local reputation score.

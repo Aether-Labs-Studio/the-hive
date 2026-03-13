@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 	"the-hive/internal/logger"
+	"time"
 )
 
 // Sanitizer defines the interface for data validation and signing.
@@ -57,7 +57,7 @@ const (
 // Engine orchestrates the DHT's high-level P2P operations.
 type Engine struct {
 	router *Router
-	
+
 	// State management
 	state      NetworkState
 	stateMu    sync.Mutex
@@ -95,12 +95,16 @@ func (e *Engine) SetSanitizer(s Sanitizer) {
 }
 
 func (e *Engine) GetReputation(pubKey []byte) int {
-	if e.repStore == nil { return 0 }
+	if e.repStore == nil {
+		return 0
+	}
 	return e.repStore.GetScore(pubKey)
 }
 
 func (e *Engine) RateAuthor(pubKey []byte, delta int) {
-	if e.repStore != nil { e.repStore.AddScore(pubKey, delta) }
+	if e.repStore != nil {
+		e.repStore.AddScore(pubKey, delta)
+	}
 }
 
 func (e *Engine) FindValue(key NodeID) ([]byte, bool) {
@@ -118,7 +122,9 @@ func (e *Engine) Subscribe(keyword string) {
 	kwID := NewNodeID(keyword)
 	go func() {
 		closest, err := e.router.LookupNode(kwID)
-		if err != nil { return }
+		if err != nil {
+			return
+		}
 
 		payload, _ := json.Marshal(SubscribePayload{TopicID: kwID})
 		for _, c := range closest {
@@ -131,9 +137,9 @@ func (e *Engine) Subscribe(keyword string) {
 	}()
 }
 
-func (e *Engine) Unsubscribe(keyword string) { e.subMgr.Unsubscribe(keyword) }
-func (e *Engine) IsSubscribed(keyword string) bool { return e.subMgr.IsSubscribed(keyword) }
-func (e *Engine) GetAllSubscriptions() []string { return e.subMgr.GetAllSubscriptions() }
+func (e *Engine) Unsubscribe(keyword string)                   { e.subMgr.Unsubscribe(keyword) }
+func (e *Engine) IsSubscribed(keyword string) bool             { return e.subMgr.IsSubscribed(keyword) }
+func (e *Engine) GetAllSubscriptions() []string                { return e.subMgr.GetAllSubscriptions() }
 func (e *Engine) GetSubscriptionManager() *SubscriptionManager { return e.subMgr }
 
 // SearchResult represents a single piece of knowledge found in the swarm.
@@ -216,15 +222,21 @@ func (e *Engine) performMultiTermSearch(terms []string) ([]SearchResult, error) 
 			defer wg.Done()
 			kwID := NewNodeID(t)
 			data, found := e.router.FindValue(kwID)
-			if !found { return }
+			if !found {
+				return
+			}
 
 			// Extract index
 			payload, _, _, err := e.sanitizer.ExtractAndInspectSecure(data, NodeID{})
-			if err != nil { return }
+			if err != nil {
+				return
+			}
 
 			if idx, ok := isIndexChunk(payload); ok {
 				set := make(map[string]struct{})
-				for _, p := range idx.Pointers { set[p] = struct{}{} }
+				for _, p := range idx.Pointers {
+					set[p] = struct{}{}
+				}
 				mu.Lock()
 				termResults[t] = set
 				mu.Unlock()
@@ -248,7 +260,9 @@ func (e *Engine) performMultiTermSearch(terms []string) ([]SearchResult, error) 
 				break
 			}
 		}
-		if inAll { intersection = append(intersection, ptr) }
+		if inAll {
+			intersection = append(intersection, ptr)
+		}
 	}
 
 	if len(intersection) == 0 {
@@ -262,10 +276,20 @@ func (e *Engine) performMultiTermSearch(terms []string) ([]SearchResult, error) 
 func (e *Engine) Share(topic, content, parentID string, state ChunkState) (string, error) {
 	logger.Info("Engine: Sharing topic: %s (Parent: %s, State: %s)", topic, parentID, state)
 
-	if state == "" { state = StateCommitted }
+	if state == "" {
+		state = StateCommitted
+	}
 
 	if e.sanitizer.IsTopicBlocked(topic) {
 		return "", fmt.Errorf("security policy: topic blocked")
+	}
+	if err := rejectBinaryLikeContent(content); err != nil {
+		GlobalTelemetry.EmitWithPayload(SecurityPolicy, "", "Rejected binary-like payload in Community Edition share path", map[string]any{
+			"reason": "binary_like_payload",
+			"topic":  topic,
+			"state":  state,
+		})
+		return "", err
 	}
 
 	sanitized := e.sanitizer.Sanitize([]byte(content))
@@ -273,11 +297,15 @@ func (e *Engine) Share(topic, content, parentID string, state ChunkState) (strin
 	var finalID NodeID
 	if len(sanitized) > ChunkThreshold {
 		id, err := e.shareLargeContent(sanitized, parentID) // Large content always committed for now
-		if err != nil { return "", err }
+		if err != nil {
+			return "", err
+		}
 		finalID = id
 	} else {
 		chunk, id, err := e.sanitizer.PackageChunk(sanitized, parentID)
-		if err != nil { return "", err }
+		if err != nil {
+			return "", err
+		}
 		_ = e.router.StoreValue(id, chunk, state)
 		finalID = id
 	}
@@ -327,7 +355,9 @@ func (e *Engine) shareLargeContent(data []byte, parentID string) (NodeID, error)
 	for i, seg := range segments {
 		// Segments are just data, we don't link them to parents individually
 		chunk, id, err := e.sanitizer.PackageChunk(seg, "")
-		if err != nil { return NodeID{}, err }
+		if err != nil {
+			return NodeID{}, err
+		}
 		_ = e.router.StoreValue(id, chunk, StateCommitted)
 		chunkIDs[i] = hex.EncodeToString(id[:])
 	}
@@ -348,10 +378,14 @@ func (e *Engine) shareLargeContent(data []byte, parentID string) (NodeID, error)
 func (e *Engine) indexContent(topic, content string, chunkID NodeID) {
 	topicKeywords := ExtractKeywords(topic)
 	contentKeywords := ExtractTopKeywords(content, 10)
-	
+
 	keywordMap := make(map[string]struct{})
-	for _, k := range topicKeywords { keywordMap[k] = struct{}{} }
-	for _, k := range contentKeywords { keywordMap[k] = struct{}{} }
+	for _, k := range topicKeywords {
+		keywordMap[k] = struct{}{}
+	}
+	for _, k := range contentKeywords {
+		keywordMap[k] = struct{}{}
+	}
 
 	chunkIDHex := hex.EncodeToString(chunkID[:])
 
@@ -374,23 +408,30 @@ func (e *Engine) indexContent(topic, content string, chunkID NodeID) {
 
 		exists := false
 		for _, p := range index.Pointers {
-			if p == chunkIDHex { exists = true; break }
+			if p == chunkIDHex {
+				exists = true
+				break
+			}
 		}
 
 		if !exists {
 			index.Pointers = append(index.Pointers, chunkIDHex)
-			if len(index.Pointers) > 50 { index.Pointers = index.Pointers[1:] }
-			
+			if len(index.Pointers) > 50 {
+				index.Pointers = index.Pointers[1:]
+			}
+
 			rawJSON, _ := json.Marshal(index)
 			newData, _ := e.sanitizer.Sign(rawJSON, "")
 			_ = e.router.StoreValue(kwID, newData, StateIndex)
 			GlobalTelemetry.Emit(EventType("KeywordSeen"), "", kw)
-			
+
 			// Active Publish: Notify k-closest nodes about the update
 			go func(topic string, cid NodeID) {
 				closest, err := e.router.LookupNode(kwID)
-				if err != nil { return }
-				
+				if err != nil {
+					return
+				}
+
 				payload, _ := json.Marshal(PublishPayload{Keyword: topic, ChunkID: cid})
 				for _, c := range closest {
 					msg := Message{
@@ -421,28 +462,53 @@ func (e *Engine) resolveManifest(manifestID NodeID, m *Manifest) ([]SearchResult
 			copy(id[:], decoded)
 
 			chunk, found := e.router.FindValue(id)
-			if !found { mu.Lock(); errorsFound = true; mu.Unlock(); return }
+			if !found {
+				mu.Lock()
+				errorsFound = true
+				mu.Unlock()
+				return
+			}
 
 			payload, pub, _, err := e.sanitizer.ExtractAndInspectSecure(chunk, id)
-			if err != nil { mu.Lock(); errorsFound = true; mu.Unlock(); return }
+			if err != nil {
+				mu.Lock()
+				errorsFound = true
+				mu.Unlock()
+				return
+			}
 
 			if pub != nil {
 				rep := e.GetReputation(pub)
-				if rep < MinReputation { mu.Lock(); filteredCount++; mu.Unlock(); return }
+				if rep < MinReputation {
+					mu.Lock()
+					filteredCount++
+					mu.Unlock()
+					return
+				}
 				authorHash := NewNodeID(string(pub))
-				mu.Lock(); authors = append(authors, fmt.Sprintf("%x", authorHash)[:8]); mu.Unlock()
+				mu.Lock()
+				authors = append(authors, fmt.Sprintf("%x", authorHash)[:8])
+				mu.Unlock()
 			}
-			mu.Lock(); segments[idx] = payload; mu.Unlock()
+			mu.Lock()
+			segments[idx] = payload
+			mu.Unlock()
 		}(i, chunkHex)
 	}
 	wg.Wait()
 
-	if filteredCount > 0 { return nil, fmt.Errorf("Contenido bloqueado por baja reputación del autor.") }
-	if errorsFound { return nil, fmt.Errorf("Error al recuperar segmentos del manifiesto.") }
+	if filteredCount > 0 {
+		return nil, fmt.Errorf("Contenido bloqueado por baja reputación del autor.")
+	}
+	if errorsFound {
+		return nil, fmt.Errorf("Error al recuperar segmentos del manifiesto.")
+	}
 
 	fullPayload := Join(segments)
 	uniqueAuthors := make(map[string]struct{})
-	for _, a := range authors { uniqueAuthors[a] = struct{}{} }
+	for _, a := range authors {
+		uniqueAuthors[a] = struct{}{}
+	}
 	authorList := strings.Join(getMapKeys(uniqueAuthors), ", ")
 
 	return []SearchResult{{
@@ -467,20 +533,28 @@ func (e *Engine) resolveIndex(indexID NodeID, idx *IndexChunk) ([]SearchResult, 
 
 			// Phase 1.1.0: Only allow Committed chunks
 			if meta, ok := e.router.storage.GetMetadata(ptrID); ok {
-				if meta.State != StateCommitted { return }
+				if meta.State != StateCommitted {
+					return
+				}
 			}
 
 			chunk, found := e.router.FindValue(ptrID)
-			if !found { return }
+			if !found {
+				return
+			}
 
 			payload, pub, parentID, err := e.sanitizer.ExtractAndInspectSecure(chunk, ptrID)
-			if err != nil { return }
+			if err != nil {
+				return
+			}
 
 			rep := 0
 			authorStr := "Desconocido"
 			if pub != nil {
 				rep = e.GetReputation(pub)
-				if rep < MinReputation { return }
+				if rep < MinReputation {
+					return
+				}
 				authorHash := NewNodeID(string(pub))
 				authorStr = fmt.Sprintf("%x", authorHash)[:8]
 			}
@@ -497,7 +571,9 @@ func (e *Engine) resolveIndex(indexID NodeID, idx *IndexChunk) ([]SearchResult, 
 	}
 	wg.Wait()
 
-	if len(results) == 0 { return nil, fmt.Errorf("No hay resultados de autores confiables.") }
+	if len(results) == 0 {
+		return nil, fmt.Errorf("No hay resultados de autores confiables.")
+	}
 	return results, nil
 }
 
@@ -529,19 +605,33 @@ func (e *Engine) TrackKeyword(kw string) {
 func (e *Engine) GetHotKeywords(limit int) []string {
 	e.hotKeywordsMu.Lock()
 	defer e.hotKeywordsMu.Unlock()
-	var list []struct { k string; c int }
-	for k, v := range e.hotKeywords { list = append(list, struct{k string; c int}{k, v}) }
+	var list []struct {
+		k string
+		c int
+	}
+	for k, v := range e.hotKeywords {
+		list = append(list, struct {
+			k string
+			c int
+		}{k, v})
+	}
 	sort.Slice(list, func(i, j int) bool { return list[i].c > list[j].c })
-	if len(list) > limit { list = list[:limit] }
+	if len(list) > limit {
+		list = list[:limit]
+	}
 	res := make([]string, len(list))
-	for i, item := range list { res[i] = item.k }
+	for i, item := range list {
+		res[i] = item.k
+	}
 	return res
 }
 
 func (e *Engine) emitTopology() {
 	contacts := e.router.rt.GetAllContacts()
 	neighbors := make([]string, len(contacts))
-	for i, c := range contacts { neighbors[i] = fmt.Sprintf("%x", c.ID) }
+	for i, c := range contacts {
+		neighbors[i] = fmt.Sprintf("%x", c.ID)
+	}
 	keys := e.router.storage.GetAllKeys()
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
@@ -569,16 +659,26 @@ func (e *Engine) SetSwarmContext(ctx context.Context) { e.mainCtx = ctx }
 func (e *Engine) SetState(newState NetworkState, bootstrapAddr string) error {
 	e.stateMu.Lock()
 	defer e.stateMu.Unlock()
-	if e.state == newState { return nil }
+	if e.state == newState {
+		return nil
+	}
 	logger.Info("Swarm: Cambiando estado de red de %s a %s", e.state, newState)
-	if e.cancelFunc != nil { e.cancelFunc() }
-	if newState == StateOffline { _ = e.router.sender.(*Transport).Stop() }
+	if e.cancelFunc != nil {
+		e.cancelFunc()
+	}
+	if newState == StateOffline {
+		_ = e.router.sender.(*Transport).Stop()
+	}
 	e.state = newState
-	if newState == StateOffline { return nil }
+	if newState == StateOffline {
+		return nil
+	}
 	ctx, cancel := context.WithCancel(e.mainCtx)
 	e.cancelFunc = cancel
 	e.StartWorkers(ctx, DefaultWorkerOptions)
-	if newState == StateOnline && bootstrapAddr != "" { go e.Bootstrap(ctx, bootstrapAddr) }
+	if newState == StateOnline && bootstrapAddr != "" {
+		go e.Bootstrap(ctx, bootstrapAddr)
+	}
 	return nil
 }
 
@@ -593,7 +693,9 @@ func (e *Engine) Bootstrap(ctx context.Context, seedAddr string) error {
 	addr, _ := net.ResolveUDPAddr("udp", seedAddr)
 	pingMsg := Message{Type: Ping, TransactionID: "bootstrap-ping", SenderID: e.router.sender.LocalID()}
 	resp, err := e.router.sender.Request(addr, pingMsg, 2*time.Second)
-	if err != nil { return nil }
+	if err != nil {
+		return nil
+	}
 	logger.Info("Bootstrap: Conectado con nodo semilla ID: %x", resp.SenderID)
 	found, _ := e.router.LookupNode(e.router.sender.LocalID())
 	logger.Info("Bootstrap: Unión completada. Se descubrieron %d nuevos contactos.", len(found))
@@ -602,16 +704,24 @@ func (e *Engine) Bootstrap(ctx context.Context, seedAddr string) error {
 
 // Helpers for detection
 func isManifest(data []byte) (*Manifest, bool) {
-	if len(data) == 0 || data[0] != '{' { return nil, false }
+	if len(data) == 0 || data[0] != '{' {
+		return nil, false
+	}
 	var m Manifest
-	if err := json.Unmarshal(data, &m); err == nil && m.Kind == ManifestKind { return &m, true }
+	if err := json.Unmarshal(data, &m); err == nil && m.Kind == ManifestKind {
+		return &m, true
+	}
 	return nil, false
 }
 
 func isIndexChunk(data []byte) (*IndexChunk, bool) {
-	if len(data) == 0 || data[0] != '{' { return nil, false }
+	if len(data) == 0 || data[0] != '{' {
+		return nil, false
+	}
 	var idx IndexChunk
-	if err := json.Unmarshal(data, &idx); err == nil && idx.Kind == IndexKind { return &idx, true }
+	if err := json.Unmarshal(data, &idx); err == nil && idx.Kind == IndexKind {
+		return &idx, true
+	}
 	return nil, false
 }
 
@@ -619,6 +729,8 @@ func mustMarshal(v any) string { d, _ := json.Marshal(v); return string(d) }
 
 func getMapKeys(m map[string]struct{}) []string {
 	var res []string
-	for k := range m { res = append(res, k) }
+	for k := range m {
+		res = append(res, k)
+	}
 	return res
 }

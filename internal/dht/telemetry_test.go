@@ -3,7 +3,10 @@ package dht
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
@@ -36,23 +39,9 @@ func TestTelemetryEmit(t *testing.T) {
 	details := "joined from 127.0.0.1"
 	telemetry.Emit(PeerJoined, fmt.Sprintf("%x", id), details)
 
-	// Wait for goroutine with a retry loop or sufficient sleep
-	var line string
-	for i := 0; i < 10; i++ {
-		line = buf.String()
-		if line != "" {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-
-	if !strings.HasSuffix(line, "\n") {
-		t.Fatalf("Telemetry should emit a newline-terminated string, got: %q", line)
-	}
-
 	var event Event
-	if err := json.Unmarshal([]byte(line), &event); err != nil {
-		t.Fatalf("Failed to unmarshal telemetry event: %v", err)
+	if err := waitForTelemetryEvent(buf, &event); err != nil {
+		t.Fatalf("Failed to read telemetry event: %v", err)
 	}
 
 	if event.Type != PeerJoined {
@@ -70,4 +59,46 @@ func TestTelemetryEmit(t *testing.T) {
 	if time.Since(event.Timestamp) > time.Second {
 		t.Errorf("Event timestamp too old: %v", event.Timestamp)
 	}
+}
+
+func TestTelemetryHandleAPIShareRejectsMultipart(t *testing.T) {
+	buf := &SafeBuffer{}
+	telemetry := NewTelemetry(buf)
+	req := httptest.NewRequest(http.MethodPost, "/api/share", strings.NewReader("payload"))
+	req.Header.Set("Content-Type", "multipart/form-data; boundary=abc123")
+	rec := httptest.NewRecorder()
+
+	telemetry.handleAPIShare(rec, req)
+
+	if rec.Code != http.StatusUnsupportedMediaType {
+		t.Fatalf("expected 415, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "Community Edition only accepts application/json") {
+		t.Fatalf("unexpected response body: %s", rec.Body.String())
+	}
+
+	var event Event
+	if err := waitForTelemetryEvent(buf, &event); err != nil {
+		t.Fatalf("expected security telemetry event: %v", err)
+	}
+	if event.Type != SecurityPolicy {
+		t.Fatalf("expected %s event, got %s", SecurityPolicy, event.Type)
+	}
+}
+
+func waitForTelemetryEvent(buf *SafeBuffer, event *Event) error {
+	for i := 0; i < 20; i++ {
+		line := buf.String()
+		if line != "" {
+			if !strings.HasSuffix(line, "\n") {
+				return fmt.Errorf("telemetry should emit a newline-terminated string, got: %q", line)
+			}
+			if err := json.Unmarshal([]byte(line), event); err != nil {
+				return err
+			}
+			return nil
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return errors.New("timeout waiting for telemetry")
 }
