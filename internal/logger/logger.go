@@ -15,6 +15,16 @@ type Logger struct {
 // This is critical for The Hive to avoid breaking the MCP protocol on os.Stdout.
 var Default = &Logger{writer: os.Stderr}
 
+// SetOutput swaps the default logger output and returns the previous writer.
+func SetOutput(w io.Writer) io.Writer {
+	if w == nil {
+		w = io.Discard
+	}
+	prev := Default.writer
+	Default.writer = w
+	return prev
+}
+
 // Printf logs a formatted string to the designated output (os.Stderr).
 func (l *Logger) Printf(format string, v ...any) {
 	fmt.Fprintf(l.writer, format+"\n", v...)
