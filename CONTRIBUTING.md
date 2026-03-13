@@ -34,6 +34,16 @@ We maintain a strict zero-tolerance policy for race conditions. All PRs must pas
 go test -race ./...
 ```
 
+### GitHub Pull Requests
+Community Edition validates pull requests with GitHub Actions using the same project entrypoints defined in the `Makefile`:
+
+```bash
+make test
+make vet
+```
+
+To actually block merges when a check fails, configure the repository branch protection or ruleset in GitHub and mark the PR checks as **required**.
+
 For network simulations, use the provided swarm script:
 ```bash
 ./scripts/swarm.sh
