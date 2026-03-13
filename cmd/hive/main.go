@@ -30,20 +30,41 @@ func runServe(args []string) int {
 	addr := fs.String("addr", "127.0.0.1:0", "UDP address to listen on for DHT")
 	nodeIDStr := fs.String("node-id", "", "Custom ID for the local node (Optional, overrides identity)")
 	bootstrapAddr := fs.String("bootstrap", "", "Address of the bootstrap node (IP:Port)")
-	monitorPort := fs.String("monitor-port", "7439", "Local port for the HTTP/SSE telemetry monitor")
-	autoDiscovery := fs.Bool("auto-discovery", true, "Enable automatic peer discovery on local network (multicast)")
-	discoveryPort := fs.Int("discovery-port", 7441, "UDP port for multicast discovery")
-	maxStorage := fs.Int64("max-storage", 1024*1024*1024, "Maximum disk storage in bytes (default 1GB)")
+	monitorPort := fs.Int("monitor-port", defaultMonitorPort, "Local port for the HTTP/SSE telemetry monitor")
+	autoDiscovery := fs.Bool("auto-discovery", defaultAutoDiscovery, "Enable automatic peer discovery on local network (multicast)")
+	discoveryPort := fs.Int("discovery-port", defaultDiscoveryPort, "UDP port for multicast discovery")
+	maxStorage := fs.Int64("max-storage", defaultMaxStorage, "Maximum disk storage in bytes (default 1GB)")
 	if err := fs.Parse(args); err != nil {
 		logger.Error("Error al parsear flags: %v", err)
 		return 1
 	}
+
+	explicitFlags := map[string]bool{}
+	fs.Visit(func(f *flag.Flag) {
+		explicitFlags[f.Name] = true
+	})
 
 	dataDir, err := ensureDataDir()
 	if err != nil {
 		logger.Error("Error al preparar el directorio de datos: %v", err)
 		return 1
 	}
+
+	configPath := filepath.Join(dataDir, "config.json")
+	fileCfg, err := ensureConfigFile(configPath)
+	if err != nil {
+		logger.Error("Error al preparar config.json: %v", err)
+		return 1
+	}
+
+	effectiveCfg := resolveRuntimeConfig(fileCfg, cliConfig{
+		Addr:          *addr,
+		Bootstrap:     *bootstrapAddr,
+		MonitorPort:   *monitorPort,
+		AutoDiscovery: *autoDiscovery,
+		DiscoveryPort: *discoveryPort,
+		MaxStorage:    *maxStorage,
+	}, explicitFlags)
 
 	privateKey, localID, err := loadLocalIdentity(dataDir, *nodeIDStr)
 	if err != nil {
@@ -70,12 +91,12 @@ func runServe(args []string) int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	storage, err := dht.NewDiskStorage(dataDir, *maxStorage, repStore)
+	storage, err := dht.NewDiskStorage(dataDir, effectiveCfg.MaxStorage, repStore)
 	if err != nil {
 		logger.Error("Error al inicializar el almacenamiento en disco: %v", err)
 		return 1
 	}
-	logger.Info("Almacenamiento persistente activado en: %s (Límite local: %d bytes)", dataDir, *maxStorage)
+	logger.Info("Almacenamiento persistente activado en: %s (Límite local: %d bytes)", dataDir, effectiveCfg.MaxStorage)
 
 	rt := dht.NewRoutingTable(localID)
 	transport := dht.NewTransport(localID, nil)
@@ -88,7 +109,7 @@ func runServe(args []string) int {
 	engine.StartWorkers(ctx, dht.DefaultWorkerOptions)
 
 	dht.GlobalTelemetry.SetEngine(engine)
-	go dht.StartMonitor("127.0.0.1:" + *monitorPort)
+	go dht.StartMonitor("127.0.0.1:" + strconv.Itoa(effectiveCfg.MonitorPort))
 
 	sentinel, err := sanitizer.NewSentinel(rulesPath, privateKey)
 	if err != nil {
@@ -100,22 +121,22 @@ func runServe(args []string) int {
 	router.SetSigner(sentinel)
 	mcpServer := mcp.NewServer(engine, sentinel)
 
-	if err := transport.Listen(*addr); err != nil {
+	if err := transport.Listen(effectiveCfg.Addr); err != nil {
 		logger.Error("Error al iniciar el transporte UDP: %v", err)
 		return 1
 	}
 	logger.Info("DHT escuchando en: %s (ID: %x)", transport.Addr().String(), localID)
 
 	dhtPort := transport.Addr().(*net.UDPAddr).Port
-	mcastAddr := "239.0.0.1:" + strconv.Itoa(*discoveryPort)
-	discovery := dht.NewDiscovery(router, dhtPort, mcastAddr, *autoDiscovery)
+	mcastAddr := "239.0.0.1:" + strconv.Itoa(effectiveCfg.DiscoveryPort)
+	discovery := dht.NewDiscovery(router, dhtPort, mcastAddr, effectiveCfg.AutoDiscovery)
 	discovery.Start(ctx)
-	if *bootstrapAddr != "" {
+	if effectiveCfg.Bootstrap != "" {
 		logger.Info("DEBUG: Launching bootstrap goroutine...")
 		go func() {
 			time.Sleep(100 * time.Millisecond)
 			logger.Info("DEBUG: Goroutine waking up, calling engine.Bootstrap...")
-			if err := engine.Bootstrap(ctx, *bootstrapAddr); err != nil {
+			if err := engine.Bootstrap(ctx, effectiveCfg.Bootstrap); err != nil {
 				logger.Error("Error en el proceso de Bootstrap: %v", err)
 			}
 		}()
