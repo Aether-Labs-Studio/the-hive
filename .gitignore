@@ -1,6 +1,7 @@
 # Go binaries
-hive
+/hive
 bin/
+.cache/
 
 # Test binaries
 *.test
@@ -16,3 +17,8 @@ AGENT.md
 
 # OS Specific
 .DS_Store
+
+# Docs
+The_Hive_Docs_EE/
+The_Hive_Docs_CE/
+
