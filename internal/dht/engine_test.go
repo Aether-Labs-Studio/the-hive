@@ -2,6 +2,9 @@ package dht
 
 import (
 	"context"
+	"crypto/ed25519"
+	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -46,7 +49,7 @@ func TestEngineBootstrap(t *testing.T) {
 	defer trB.Stop()
 
 	engineB := NewEngine(roB, nil)
-	
+
 	// 1. Perform Bootstrapping
 	ctx := context.Background()
 	seedAddr := trA.Addr().String()
@@ -73,3 +76,52 @@ func TestKnowledgeVersioning(t *testing.T) {
 	// Logic verified via sanitizer tests and E2E
 }
 
+type shareTestSanitizer struct{}
+
+func (s *shareTestSanitizer) ExtractAndInspectSecure(chunk []byte, expectedID NodeID) ([]byte, ed25519.PublicKey, string, error) {
+	return chunk, nil, "", nil
+}
+func (s *shareTestSanitizer) Sanitize(raw []byte) []byte                        { return raw }
+func (s *shareTestSanitizer) Sign(data []byte, parentID string) ([]byte, error) { return data, nil }
+func (s *shareTestSanitizer) PackageChunk(sanitized []byte, parentID string) ([]byte, NodeID, error) {
+	return sanitized, NewNodeID(string(sanitized)), nil
+}
+func (s *shareTestSanitizer) IsTopicBlocked(topic string) bool { return false }
+
+func TestEngineShareRejectsBinaryLookingPayload(t *testing.T) {
+	id := NewNodeID("share-node")
+	engine := NewEngine(NewRouter(nil, NewRoutingTable(id), NewInMemoryStorage()), nil)
+	engine.SetSanitizer(&shareTestSanitizer{})
+	buf := &SafeBuffer{}
+	prevTelemetry := GlobalTelemetry
+	GlobalTelemetry = NewTelemetry(buf)
+	defer func() { GlobalTelemetry = prevTelemetry }()
+
+	payload := "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0a4AAAAASUVORK5CYII="
+	_, err := engine.Share("design", payload, "", StateCommitted)
+	if err == nil {
+		t.Fatal("expected binary-like payload to be rejected")
+	}
+	if !strings.Contains(err.Error(), ceBinaryPayloadError) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var event Event
+	if err := waitForTelemetryEvent(buf, &event); err != nil {
+		t.Fatalf("expected security telemetry event: %v", err)
+	}
+	if event.Type != SecurityPolicy {
+		t.Fatalf("expected %s event, got %s", SecurityPolicy, event.Type)
+	}
+	if !strings.Contains(event.Details, "Rejected binary-like payload") {
+		t.Fatalf("unexpected event details: %s", event.Details)
+	}
+
+	var payloadMap map[string]any
+	if err := json.Unmarshal(event.Payload, &payloadMap); err != nil {
+		t.Fatalf("failed to decode telemetry payload: %v", err)
+	}
+	if payloadMap["reason"] != "binary_like_payload" {
+		t.Fatalf("unexpected telemetry reason: %#v", payloadMap["reason"])
+	}
+}

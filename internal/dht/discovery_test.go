@@ -2,6 +2,7 @@ package dht
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -36,7 +37,7 @@ func TestDiscovery(t *testing.T) {
 	defer cancel()
 
 	// Unique multicast address for testing to avoid interference
-	mcastAddr := "239.0.0.1:7445"
+	mcastAddr := fmt.Sprintf("239.0.0.1:%d", 7445+time.Now().Nanosecond()%1000)
 
 	// Start Discovery on A
 	portA := trA.Addr().(*net.UDPAddr).Port
@@ -50,25 +51,23 @@ func TestDiscovery(t *testing.T) {
 	discB.SetInterval(100 * time.Millisecond)
 	discB.Start(ctx)
 
-	// Wait for discovery
-	deadline := time.Now().Add(10 * time.Second)
-	found := false
-	for time.Now().Before(deadline) {
-		contacts := rtA.FindClosestContacts(idB, 1)
-		if len(contacts) > 0 && contacts[0].ID == idB {
-			found = true
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	if !found {
+	if !waitForDiscoveredContact(rtA, idB, 10*time.Second) {
 		t.Errorf("Node A failed to discover Node B")
 	}
 
-	// Verify Node B also discovered Node A
-	contactsB := rtB.FindClosestContacts(idA, 1)
-	if len(contactsB) == 0 || contactsB[0].ID != idA {
+	if !waitForDiscoveredContact(rtB, idA, 10*time.Second) {
 		t.Errorf("Node B failed to discover Node A")
 	}
+}
+
+func waitForDiscoveredContact(rt *RoutingTable, target NodeID, timeout time.Duration) bool {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		contacts := rt.FindClosestContacts(target, 1)
+		if len(contacts) > 0 && contacts[0].ID == target {
+			return true
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return false
 }

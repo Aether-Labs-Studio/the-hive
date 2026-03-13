@@ -6,9 +6,10 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
-	"time"
 	"the-hive/internal/logger"
+	"time"
 )
 
 // EventType identifies the kind of P2P event occurring in the network.
@@ -21,6 +22,7 @@ const (
 	RPCError       EventType = "RPCError"
 	TopologySync   EventType = "TopologySync"
 	TopicMatch     EventType = "TopicMatch"
+	SecurityPolicy EventType = "SecurityPolicy"
 )
 
 // Event represents a structured telemetry record for P2P activity.
@@ -180,12 +182,17 @@ func (t *Telemetry) handleSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Telemetry) handleAPIState(w http.ResponseWriter, r *http.Request) {
-	var req struct { State NetworkState `json:"state"` }
+	var req struct {
+		State NetworkState `json:"state"`
+	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
-	if t.engine == nil { http.Error(w, "Engine not ready", 503); return }
+	if t.engine == nil {
+		http.Error(w, "Engine not ready", 503)
+		return
+	}
 	if err := t.engine.SetState(req.State, ""); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -196,62 +203,98 @@ func (t *Telemetry) handleAPIState(w http.ResponseWriter, r *http.Request) {
 
 func (t *Telemetry) handleAPISearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
-	if q == "" { http.Error(w, "Missing q parameter", 400); return }
-	if t.engine == nil { http.Error(w, "Engine not ready", 503); return }
-	
+	if q == "" {
+		http.Error(w, "Missing q parameter", 400)
+		return
+	}
+	if t.engine == nil {
+		http.Error(w, "Engine not ready", 503)
+		return
+	}
+
 	res, err := t.engine.Search(q)
-	if err != nil { http.Error(w, err.Error(), 500); return }
-	
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"query": q, "result": res})
 }
 
 func (t *Telemetry) handleAPIShare(w http.ResponseWriter, r *http.Request) {
-	var req struct { 
-		Topic    string     `json:"topic"` 
-		Content  string     `json:"content"` 
+	if ct := r.Header.Get("Content-Type"); ct != "" && !strings.HasPrefix(ct, "application/json") {
+		t.EmitWithPayload(SecurityPolicy, "", "Rejected non-JSON share request in Community Edition", map[string]any{
+			"reason":       "unsupported_media_type",
+			"content_type": ct,
+			"path":         r.URL.Path,
+		})
+		http.Error(w, "Unsupported media type: Community Edition only accepts application/json text payloads", http.StatusUnsupportedMediaType)
+		return
+	}
+	var req struct {
+		Topic    string     `json:"topic"`
+		Content  string     `json:"content"`
 		ParentID string     `json:"parent_id,omitempty"`
 		State    ChunkState `json:"state,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", 400); return
+		http.Error(w, "Invalid request", 400)
+		return
 	}
-	if t.engine == nil { http.Error(w, "Engine not ready", 503); return }
-	
+	if t.engine == nil {
+		http.Error(w, "Engine not ready", 503)
+		return
+	}
+
 	res, err := t.engine.Share(req.Topic, req.Content, req.ParentID, req.State)
-	if err != nil { http.Error(w, err.Error(), 500); return }
-	
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"status": "ok", "message": res})
 }
 
 func (t *Telemetry) handleAPIRate(w http.ResponseWriter, r *http.Request) {
-	var req struct { 
-		ChunkID string `json:"chunk_id"` 
-		Score   int    `json:"score"` 
+	var req struct {
+		ChunkID string `json:"chunk_id"`
+		Score   int    `json:"score"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", 400); return
+		http.Error(w, "Invalid request", 400)
+		return
 	}
-	if t.engine == nil { http.Error(w, "Engine not ready", 503); return }
-	
+	if t.engine == nil {
+		http.Error(w, "Engine not ready", 503)
+		return
+	}
+
 	res, err := t.engine.Rate(req.ChunkID, req.Score)
-	if err != nil { http.Error(w, err.Error(), 500); return }
-	
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"status": "ok", "message": res})
 }
 
 func (t *Telemetry) handleAPISubscribe(w http.ResponseWriter, r *http.Request) {
-	var req struct { 
-		Keyword string `json:"keyword"` 
-		Action  string `json:"action"` 
+	var req struct {
+		Keyword string `json:"keyword"`
+		Action  string `json:"action"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", 400); return
+		http.Error(w, "Invalid request", 400)
+		return
 	}
-	if t.engine == nil { http.Error(w, "Engine not ready", 503); return }
-	
+	if t.engine == nil {
+		http.Error(w, "Engine not ready", 503)
+		return
+	}
+
 	if req.Action == "unsubscribe" {
 		t.engine.Unsubscribe(req.Keyword)
 	} else {
@@ -261,7 +304,10 @@ func (t *Telemetry) handleAPISubscribe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *Telemetry) handleAPIGetSubscriptions(w http.ResponseWriter, r *http.Request) {
-	if t.engine == nil { http.Error(w, "Engine not ready", 503); return }
+	if t.engine == nil {
+		http.Error(w, "Engine not ready", 503)
+		return
+	}
 	subs := t.engine.GetAllSubscriptions()
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"subscriptions": subs})
@@ -270,7 +316,7 @@ func (t *Telemetry) handleAPIGetSubscriptions(w http.ResponseWriter, r *http.Req
 // StartMonitor launches the HTTP server for the Live Monitor.
 func StartMonitor(addr string) {
 	mux := http.NewServeMux()
-	
+
 	// Root: Serve the embedded HTML with anti-cache headers
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
